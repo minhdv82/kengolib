@@ -11,45 +11,45 @@ class Range {
   private:
     // out of bound value
     V ob_value_;
-    std::map<K, V> range_;
+    std::map<K, V> map_;
   public:
     Range<K, V>(const V& val) : ob_value_{val} {}
-    size_t size() const { return range_.size(); }
+    size_t size() const { return map_.size(); }
 
     void assign(const K& key_from, const K& key_to, const V& val) {
       if (!(key_from < key_to)) return;
-      auto it = range_.upper_bound(key_from);
+      auto it = map_.upper_bound(key_from);
       V res_val = ob_value_;
-      if (it != range_.begin()) {
+      if (it != map_.begin()) {
         res_val = (--it)->second;
         ++it;
       }
-      if (!(res_val == val)) range_.insert_or_assign(key_from, val);
-      while ((it != range_.end()) && (it->first < key_to)) {
+      if (!(res_val == val)) map_.insert_or_assign(key_from, val);
+      while ((it != map_.end()) && (it->first < key_to)) {
         res_val = it->second;
-        it = range_.erase(it);
+        it = map_.erase(it);
       }
-      if (it == range_.end()) {
-        if (!(val == ob_value_)) range_.insert_or_assign(key_to, ob_value_);
+      if (it == map_.end()) {
+        if (!(val == ob_value_)) map_.insert_or_assign(key_to, ob_value_);
       } else if ((key_to < it->first) && (!(res_val == val))) {
-        range_.insert_or_assign(key_to, res_val);
+        map_.insert_or_assign(key_to, res_val);
       }
     }
 
     const V& operator[] (const K& key) const {
-      auto it = range_.upper_bound(key);
-      return (it == range_.begin())? ob_value_ : (--it)->second;
+      auto it = map_.upper_bound(key);
+      return (it == map_.begin())? ob_value_ : (--it)->second;
     }
 
     ~Range() {
-      range_.clear();
+      map_.clear();
     }
 
     bool test() const {
-      if (range_.size() == 0) return true;
-      auto it = range_.begin();
+      if (map_.size() == 0) return true;
+      auto it = map_.begin();
       V val = ob_value_;
-      while (it != range_.end()) {
+      while (it != map_.end()) {
         if (it->second == val) return false;
         val = (it++)->second;
       }
@@ -59,11 +59,11 @@ class Range {
 };
 
 template <typename K, typename V>
-Range<K, V>* generate(int num_elem, const V val) {
+Range<K, V>* generate(int num_elem, const V& ob_val) {
   #include <time.h>
   #include <stdlib.h>
   srand(time(NULL) + 137);
-  Range<K, V>* im = new Range<K, V>{val};
+  Range<K, V>* im = new Range<K, V>{ob_val};
   for (int i = 0; i < num_elem; ++i) {
     int lo = -i + std::rand(), hi = std::rand() / 3, val = std::rand();
     im->assign(static_cast<K>(lo), static_cast<K>(hi), static_cast<V>(val));

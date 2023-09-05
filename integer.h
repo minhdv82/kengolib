@@ -64,7 +64,6 @@ struct bigint {
     bigint() : size_{1}, val_{{0}} {}
     bigint(int x) : size_{1}, val_{static_cast<uint64_t>(x)} {}
     bigint operator + (const bigint&) {}
-    bigint& operator - (const bigint&) {}
     bigint& operator * (const bigint&) {}
     bigint& operator / (const bigint&) {}
     bigint& operator % (const bigint&) {}

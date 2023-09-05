@@ -17,10 +17,10 @@ class Zeroable {
     virtual bool is_zero() const = 0;
 };
 
-class Modulable {
+class Moduloable {
   public:
    Moduloable() {};
-   virtual Modulable& operator% (const Modulable&) = 0;
+   virtual Moduloable& operator% (const Moduloable&) = 0;
 };
 
 template <typename T>
@@ -32,8 +32,8 @@ void swap(T& x, T& y) {
 
 template <typename T>
 T gcd(const T a, const T b) {
-  if (a == 0) return b;
-  return (b, a % b);
+  if (b == 0) return a;
+  return gcd(b, a % b);
 };
 
 template <typename T>

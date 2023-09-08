@@ -56,6 +56,13 @@ class Range {
       if ((--it)->second != ob_value_) return false;
       return true;
     }
+
+    void display() const {
+      std::cout << "-INFTY : " << ob_value_ << std::endl;
+      for (auto [k, v] : map_) {
+        std::cout << k << " : " << v << std::endl;
+      }
+    }
 };
 
 template <typename K, typename V>

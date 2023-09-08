@@ -279,18 +279,6 @@ void luinverse(const int n, T* A) {
   delete[] icol;
 }
 
-// void printmat(int n, int m, doub1 &A)
-// {
-// 	printf("\n");
-// 	for (int i = 0; i < n; i++)
-// 	{
-// 		for (int j = 0; j < m; j++)
-// 			printf("%10.3f", A[i + n * j]);
-// 		printf("\n");
-// 	}
-// 	printf("\n");
-// }
-
 // linear least squares fit y = sum_c[i]*f[i](x)
 // return vector of coefficients c
 template <typename T>

@@ -72,7 +72,7 @@ struct bigint {
   size_t size() const { return val_.size(); }
   bigint() : val_{{0}} {}
   bigint(uint64_t x) : val_{x} {}
-  bigint(std::vector<uint64_t> val) : val_{val} {}
+  bigint(const std::vector<uint64_t>& val) : val_{val} {}
   bigint(const bigint& rhs) : val_{rhs.val_} {}
   bigint operator + (const bigint&) const;
   bigint operator * (const bigint&) const;
@@ -81,8 +81,8 @@ struct bigint {
   // bigint operator / (const bigint&) const;
   bigint operator % (uint64_t) const;
   // bigint operator % (const bigint&) const;
-  bigint operator >> (int);
-  bigint operator << (int);
+  bigint operator >> (int) const;
+  bigint operator << (int) const;
   bool operator == (const bigint&) const;
   bool operator != (const bigint& rhs) const { return !((*this) == rhs); }
   bool operator == (uint64_t x) const { return (this->size() == 1 && this->val_[0] == x); }

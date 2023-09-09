@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) [2023] Minh v. Duong; dvminh82@gmail.com
  *
@@ -51,7 +50,7 @@ bigint bigint::operator+ (const bigint& rhs) const {
   for (size_t i = 0; i < usz; ++i) {
     add__(v[i], u[i]);
     c += u[i];
-    add__(v[i++], c);
+    add__(v[i], c);
   }
 
   size_t i = usz;
@@ -65,9 +64,14 @@ bigint bigint::operator+ (const bigint& rhs) const {
   return bigint(v);
 }
 
-bigint bigint::operator >> (int n) {
+bigint bigint::operator >> (int n) const {
   std::vector<uint64_t> v = this->val_;
   if (n < 1) return bigint(v);
+  if (n == 64) {
+    if (v.size() < 2) return 0;
+    v.pop_back();
+    return bigint(v);
+  }
   uint64_t c = 0;
   for (int i = this->size() - 1; i >= 0; --i) {
     uint64_t val = (v[i] >> n) | c;
@@ -82,9 +86,13 @@ bigint bigint::operator >> (int n) {
   return bigint(v);
 }
 
-bigint bigint::operator << (int n) {
+bigint bigint::operator << (int n) const {
   std::vector<uint64_t> v = this->val_;
-  if (n < 1) return bigint(v);
+  if (n == 0) return bigint(v);
+  if (n == 64) {
+    v.insert(v.begin(), 0);
+    return bigint(v);
+  }
   uint64_t c = 0;
   for (size_t i = 0; i < v.size(); ++i) {
     uint64_t val = (v[i] << n) | c;
@@ -129,7 +137,7 @@ bigint bigint::operator* (const bigint& rhs) const {
   bigint val = (*this);
   bigint res = val * rhs.val_.back();
   for (int i = rhs.size() - 2; i >= 0; --i) {
-    res = (res << 64) + val * rhs.val_[i];
+    res = (res << 64) + (val) * rhs.val_[i];
   }
   return res;
 }
@@ -158,7 +166,7 @@ bigint bigint::operator / (uint64_t x) const {
 
 // }
 
-bigint bigint::operator %  (uint64_t x) const {
+bigint bigint::operator % (uint64_t x) const {
   assert(x != 0);
   if ((*this) < x) return (*this);
   uint64_t c = 0;

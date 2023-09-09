@@ -65,19 +65,21 @@ void euclid(T& a, T& b) {
 
 struct bigint {
   std::vector<uint64_t> val_;
+  void display();
   size_t size() const { return val_.size(); }
   bigint() : val_{{0}} {}
   bigint(int x) : val_{static_cast<uint64_t>(x)} {}
   bigint(std::vector<uint64_t> val) : val_{val} {}
   bigint(const bigint& rhs) : val_{rhs.val_} {}
   bigint operator + (const bigint&);
-  // bigint operator * (const bigint&);
+  bigint operator * (const bigint&);
+  bigint operator * (uint64_t);
   // bigint operator / (const bigint&);
   // bigint operator % (const bigint&);
   bigint operator >> (int);
-  // bigint operator << (int);
+  bigint operator << (int);
   bool operator == (const bigint&);
-  bool operator == (int x);
+  bool operator == (uint64_t x) { return (this->size() == 1 && this->val_[0] == x); };
   bool operator > (const bigint&);
   // bool operator >= (const bigint&);
   // bool operator < (const bigint&);

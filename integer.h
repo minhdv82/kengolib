@@ -31,6 +31,13 @@ void swap(T& x, T& y) {
 };
 
 template <typename T>
+void swap_x(T& x, T& y) {
+  x ^= y;
+  y ^= x;
+  x ^= y;
+}
+
+template <typename T>
 T gcd(const T a, const T b) {
   if (b == 0) return a;
   return gcd(b, a % b);
@@ -57,16 +64,22 @@ void euclid(T& a, T& b) {
 };
 
 struct bigint {
-  private:
-    size_t size_;
-    std::vector<uint64_t> val_;
-  public:
-    bigint() : size_{1}, val_{{0}} {}
-    bigint(int x) : size_{1}, val_{static_cast<uint64_t>(x)} {}
-    bigint operator + (const bigint&) {}
-    bigint& operator * (const bigint&) {}
-    bigint& operator / (const bigint&) {}
-    bigint& operator % (const bigint&) {}
-    bool operator == (const bigint&) {}
-    bool operator == (const int&) {}
+  std::vector<uint64_t> val_;
+  size_t size() const { return val_.size(); }
+  bigint() : val_{{0}} {}
+  bigint(int x) : val_{static_cast<uint64_t>(x)} {}
+  bigint(std::vector<uint64_t> val) : val_{val} {}
+  bigint(const bigint& rhs) : val_{rhs.val_} {}
+  bigint operator + (const bigint&);
+  // bigint operator * (const bigint&);
+  // bigint operator / (const bigint&);
+  // bigint operator % (const bigint&);
+  bigint operator >> (int);
+  // bigint operator << (int);
+  bool operator == (const bigint&);
+  bool operator == (int x);
+  bool operator > (const bigint&);
+  // bool operator >= (const bigint&);
+  // bool operator < (const bigint&);
+  // bool operator <= (const bigint&);
 };

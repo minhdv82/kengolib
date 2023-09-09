@@ -23,6 +23,9 @@ class Moduloable {
    virtual Moduloable& operator% (const Moduloable&) = 0;
 };
 
+inline void add__(uint64_t& x, uint64_t & y);
+inline void mul__(uint64_t& x, uint64_t& y);
+
 template <typename T>
 void swap(T& x, T& y) {
   T t = x;
@@ -68,20 +71,24 @@ struct bigint {
   void display();
   size_t size() const { return val_.size(); }
   bigint() : val_{{0}} {}
-  bigint(int x) : val_{static_cast<uint64_t>(x)} {}
+  bigint(uint64_t x) : val_{x} {}
   bigint(std::vector<uint64_t> val) : val_{val} {}
   bigint(const bigint& rhs) : val_{rhs.val_} {}
-  bigint operator + (const bigint&);
-  bigint operator * (const bigint&);
-  bigint operator * (uint64_t);
-  // bigint operator / (const bigint&);
-  // bigint operator % (const bigint&);
+  bigint operator + (const bigint&) const;
+  bigint operator * (const bigint&) const;
+  bigint operator * (uint64_t) const;
+  bigint operator / (uint64_t) const;
+  // bigint operator / (const bigint&) const;
+  bigint operator % (uint64_t) const;
+  // bigint operator % (const bigint&) const;
   bigint operator >> (int);
   bigint operator << (int);
-  bool operator == (const bigint&);
-  bool operator == (uint64_t x) { return (this->size() == 1 && this->val_[0] == x); };
-  bool operator > (const bigint&);
-  // bool operator >= (const bigint&);
-  // bool operator < (const bigint&);
-  // bool operator <= (const bigint&);
+  bool operator == (const bigint&) const;
+  bool operator != (const bigint& rhs) const { return !((*this) == rhs); }
+  bool operator == (uint64_t x) const { return (this->size() == 1 && this->val_[0] == x); }
+  bool operator != (uint64_t x) const { return !((*this) == x); }
+  bool operator > (const bigint&) const;
+  bool operator >= (const bigint& rhs) const { return ((*this) == rhs || (*this) > rhs); }
+  bool operator < (const bigint& rhs) const {return !((*this) >= rhs); }
+  bool operator <= (const bigint& rhs) const { return !((*this) > rhs); }
 };

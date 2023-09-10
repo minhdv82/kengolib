@@ -51,10 +51,11 @@ void euclid(T& a, T& b) {
   T s = 0, ss = 1, r = a, rr = b;
 
   while (r != 0) {
+    T q = rr / r;
     rr = rr % r;
     swap(r, rr);
 
-    ss = ss % s;
+    ss = ss - q * s;
     swap(ss, s);
   }
   

@@ -197,7 +197,25 @@ void divmod__(bigint& no, bigint& de) {
   bigint res = 0;
   bigint val = no;
   while (val >= de) {
-    bigint r = 1;
+    if (val == de) {
+      no = res + val;
+      de = 0;
+      return;
+    }
+    uint128_t v = val.val_.back(), u = de.val_.back();
+    if (v < u) {
+      v = (v << 64) + val.val_[val.size() - 2];
+    }
+    uint64_t sig = v / u;
+    if (sig > 1) {
+      --sig;
+    }
+    size_t n = val.size() - de.size();
+    std::vector<uint64_t> vv;
+    for (size_t i = 0; i < n; ++i) vv.push_back(0);
+    vv.push_back(sig);
+    bigint r(vv);
+
     while (r * de < val) {
       r = r << 1;
     }

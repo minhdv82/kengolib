@@ -15,7 +15,7 @@
 
 int main() {
   Rand rng(82 + time(nullptr));
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 100; ++i) {
     bigint x({rng.int64(), rng.int64(), rng.int64(), rng.int64()});
     bigint y({rng.int64(), rng.int64(), rng.int64(), rng.int64()});
 
@@ -29,6 +29,7 @@ int main() {
     assert(x * (x + y) == x * x + x * y);
     assert((x + y) - x == y);
     assert(x - (x + 1) == 0);
+    euclid(x, y);
   }
   std::cout << "Test passed\n";
 

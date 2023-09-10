@@ -146,12 +146,19 @@ bigint bigint::operator / (uint64_t x) const {
   assert(x != 0);
   if ((*this) < x) return 0;
   std::vector<uint64_t> v;
+  uint128_t x128 = static_cast<uint128_t>(x);
   uint64_t c = 0;
   for (int i = this->size() - 1; i >= 0; --i) {
-    uint128_t val = (static_cast<uint128_t>(c) << 64) + this->val_[i];
-    c = static_cast<uint64_t>(val % x);
-    v.insert(v.begin(), static_cast<uint64_t>(val / x));
+    uint128_t val = (static_cast<uint128_t>(c) << 64) | static_cast<uint128_t>(this->val_[i]);
+    c = static_cast<uint64_t>(val % x128);
+    uint64_t earl = static_cast<uint64_t>(val / x128);
+    // std::cout << "earl: " << earl << std::endl;
+    v.insert(v.begin(), earl);
   }
+
+  // for (auto e : v) {
+  //   std::cout << "ee : " << e << std::endl;
+  // }
 
   while (v.back() == 0 && v.size() > 1) {
     v.pop_back();
@@ -169,12 +176,13 @@ bigint bigint::operator / (uint64_t x) const {
 bigint bigint::operator % (uint64_t x) const {
   assert(x != 0);
   if ((*this) < x) return (*this);
+
   uint64_t c = 0;
   uint128_t xx = x;
   for (int i = this->size() - 1; i >= 0; --i) {
-    uint128_t val = (static_cast<uint128_t>(c) << 64) + this->val_[i];
+    uint128_t val = (static_cast<uint128_t>(c) << 64) | static_cast<uint128_t>(this->val_[i]);
     c = static_cast<uint64_t>(val % xx);
   }
-  return bigint(c);
+  return bigint({c});
  }  
   

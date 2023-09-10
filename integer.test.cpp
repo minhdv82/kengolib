@@ -17,20 +17,23 @@ int main() {
   Rand rng(82 + time(nullptr));
   for (int i = 0; i < 100; ++i) {
     bigint x({rng.int64(), rng.int64(), rng.int64(), rng.int64()});
-    bigint y({rng.int64(), rng.int64()});
+    bigint y({rng.int64(), rng.int64(), rng.int64()});
     uint64_t q = rng.int64();
-    
-    bigint s = y / q, r = y % q;
-    bigint sq = s * q;
+
+    bigint s = y / q;
+    bigint r = y % q;
+    bigint yy = s * q + r;
     std::cout << q << std::endl;
-    y.display();
     s.display();
     r.display();
-    sq.display();
-    // assert(x * y == y * x);
-    // assert(x + y == y + x);
+    y.display();
+    yy.display();
+    assert(x * y == y * x);
+    assert((x + y) * x == x * (y + x));
+    assert(r + s == s + r);
     assert(r < q);
-    assert(y == (s * q) + r);
+    assert(yy <= y);
+    assert(y == yy);
   }
   std::cout << "Test passed\n";
 

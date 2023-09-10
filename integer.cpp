@@ -11,16 +11,16 @@
 #include <iostream>
 #include <cassert>
 
-inline void add__(uint64_t& x, uint64_t & y) {
-  uint128_t res = x + y;
-  x = res;
-  y = res >> 64;
+inline void add__(uint64_t& x, uint64_t& y) {
+  uint128_t val = static_cast<uint128_t>(x) + static_cast<uint128_t>(y);
+  x = val;
+  y = val >> 64;
 }
 
 inline void mul__(uint64_t& x, uint64_t& y) {
-  uint128_t res = x * y;
-  x = res;
-  y = res >> 64;
+  uint128_t val = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
+  x = val;
+  y = val >> 64;
 }
 
 void bigint::display() {
@@ -47,13 +47,14 @@ bigint bigint::operator+ (const bigint& rhs) const {
   }
   size_t usz = u.size(), vsz = v.size();
   uint64_t c = 0;
-  for (size_t i = 0; i < usz; ++i) {
+  size_t i = 0;
+  for (i = 0; i < usz; ++i) {
     add__(v[i], u[i]);
-    c += u[i];
     add__(v[i], c);
+    c += u[i];
   }
 
-  size_t i = usz;
+  i = usz;
   while (c > 0) {
     if (i >= vsz) {
       v.push_back(c);
@@ -79,16 +80,17 @@ bigint bigint::operator >> (int n) const {
     v[i] = val;
   }
 
-  while (v.back() == 0 and v.size() > 0) {
-    v.pop_back();
-  }
+  // while (v.back() == 0 and v.size() > 1) {
+  //   v.pop_back();
+  // }
 
   return bigint(v);
 }
 
 bigint bigint::operator << (int n) const {
+  if (n == 0) return (*this);
+  if (*this == 0) return 0;
   std::vector<uint64_t> v = this->val_;
-  if (n == 0) return bigint(v);
   if (n == 64) {
     v.insert(v.begin(), 0);
     return bigint(v);
@@ -134,55 +136,49 @@ bigint bigint::operator* (uint64_t x) const {
 }
 
 bigint bigint::operator* (const bigint& rhs) const {
-  bigint val = (*this);
-  bigint res = val * rhs.val_.back();
+  if (*this == 0 || rhs == 0) return 0;
+  bigint lval = (*this);
+  bigint res = lval * rhs.val_.back();
   for (int i = rhs.size() - 2; i >= 0; --i) {
-    res = (res << 64) + (val) * rhs.val_[i];
+    res = (lval * rhs.val_[i]) + (res << 64);
   }
   return res;
 }
 
 bigint bigint::operator / (uint64_t x) const {
   assert(x != 0);
-  if ((*this) < x) return 0;
-  std::vector<uint64_t> v;
-  uint128_t x128 = static_cast<uint128_t>(x);
+  bigint lval = (*this);
+  if (lval < x) return 0;
+  if (lval == x) return 1;
+  size_t sz = lval.size();
+  std::vector<uint64_t> v(sz, 0);
   uint64_t c = 0;
-  for (int i = this->size() - 1; i >= 0; --i) {
-    uint128_t val = (static_cast<uint128_t>(c) << 64) | static_cast<uint128_t>(this->val_[i]);
-    c = static_cast<uint64_t>(val % x128);
-    uint64_t earl = static_cast<uint64_t>(val / x128);
-    // std::cout << "earl: " << earl << std::endl;
-    v.insert(v.begin(), earl);
-  }
-
-  // for (auto e : v) {
-  //   std::cout << "ee : " << e << std::endl;
-  // }
-
-  while (v.back() == 0 && v.size() > 1) {
-    v.pop_back();
+  for (int i = sz - 1; i >= 0; --i) {
+    uint128_t val = (static_cast<uint128_t>(c) << 64) + static_cast<uint128_t>(lval.val_[i]);
+    c = static_cast<uint64_t>(val % x);
+    uint64_t earl = static_cast<uint64_t>(val / x);
+    v[i] = earl;
   }
 
   return bigint(v);
-
 }
-
-// bigint bigint::operator/ (const bigint& rhs) const {
-//   assert(rhs != 0);
-
-// }
 
 bigint bigint::operator % (uint64_t x) const {
   assert(x != 0);
-  if ((*this) < x) return (*this);
-
+  bigint lval = (*this);
+  if (lval < x) return lval;
+  if (lval == x) return 0;
   uint64_t c = 0;
-  uint128_t xx = x;
-  for (int i = this->size() - 1; i >= 0; --i) {
-    uint128_t val = (static_cast<uint128_t>(c) << 64) | static_cast<uint128_t>(this->val_[i]);
-    c = static_cast<uint64_t>(val % xx);
+  for (int i = lval.size() - 1; i >= 0; --i) {
+    uint128_t val = (static_cast<uint128_t>(c) << 64) | lval.val_[i];
+    c = static_cast<uint64_t>(val % x);
   }
-  return bigint({c});
- }  
+  return bigint(c);
+}  
+
+bigint bigint::operator/ (const bigint& rhs) const {
+  assert(rhs != 0);
+
+}
+
   

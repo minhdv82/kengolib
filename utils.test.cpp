@@ -11,7 +11,7 @@
 #include <iostream>
 
 int main() {
-  Rand rng(42 + time(nullptr));
+  Rand rng(82 + time(nullptr));
   
   std::cout << rng.doub() << std::endl;
 

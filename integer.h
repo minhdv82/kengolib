@@ -69,11 +69,17 @@ void euclid(T& a, T& b) {
 struct bigint {
   std::vector<uint64_t> val_;
   void display();
+  void canonize() {
+    while (val_.back() == 0 && val_.size() > 1) {
+      val_.pop_back();
+    }
+  }
   size_t size() const { return val_.size(); }
   bigint() : val_{{0}} {}
-  bigint(uint64_t x) : val_{x} {}
-  bigint(const std::vector<uint64_t>& val) : val_{val} {}
-  bigint(const bigint& rhs) : val_{rhs.val_} {}
+  bigint(uint64_t x) : val_{{x}} {}
+  bigint(const std::vector<uint64_t>& val) : val_{val} { canonize(); }
+  // bigint(const bigint& rhs) : val_{rhs.val_} { canonize(); }
+  bigint(const bigint& rhs) = default;
   bigint operator + (const bigint&) const;
   bigint operator * (const bigint&) const;
   bigint operator * (uint64_t) const;

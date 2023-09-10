@@ -67,6 +67,19 @@ void euclid(T& a, T& b) {
   a = ss;
 };
 
+// compute x^n modulo p
+template <typename T>
+T pow_mod(const T x, const T n, const T p) {
+  T k = n, r = x;
+  T res = x;
+  while (k > 0) {
+    if ((k & 1) == 1) res = (res * r) % p;
+    k = k >> 1;
+    r = r << 1;
+  }
+  return res;
+}
+
 struct bigint {
   std::vector<uint64_t> val_;
   void display() const;
@@ -79,18 +92,18 @@ struct bigint {
   bigint() : val_{{0}} {}
   bigint(uint64_t x) : val_{{x}} {}
   bigint(const std::vector<uint64_t>& val) : val_{val} { canonize(); }
-  // bigint(const bigint& rhs) : val_{rhs.val_} { canonize(); }
-  bigint(const bigint& rhs) = default;
+  bigint(const bigint& rhs) : val_{rhs.val_} { canonize(); }
+  // bigint(const bigint& rhs) = default;
   bigint operator + (const bigint&) const;
   bigint operator - (const bigint&) const;
   bigint operator * (const bigint&) const;
   bigint operator * (uint64_t) const;
   bigint operator / (uint64_t) const;
   bigint operator / (const bigint&) const;
-  bigint operator % (uint64_t) const;
   bigint operator % (const bigint&) const;
   bigint operator >> (int) const;
   bigint operator << (int) const;
+  uint64_t operator & (uint64_t x) const { return this->val_[0] & x; }
   bool operator == (const bigint&) const;
   bool operator != (const bigint& rhs) const { return !((*this) == rhs); }
   bool operator == (uint64_t x) const { return (this->size() == 1 && this->val_[0] == x); }

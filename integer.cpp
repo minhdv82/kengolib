@@ -198,8 +198,12 @@ void divmod__(bigint& no, bigint& de) {
   bigint val = no;
   while (val >= de) {
     if (val == de) {
-      no = res + val;
+      no = res + 1;
       de = 0;
+      return;
+    } else if (val == 0) {
+      de = 0;
+      no = res;
       return;
     }
     uint128_t v = val.val_.back(), u = de.val_.back();
@@ -219,12 +223,11 @@ void divmod__(bigint& no, bigint& de) {
     while (r * de < val) {
       r = r << 1;
     }
-    if (r * de == val) {
-      no = res + r;
-      de = 0;
-      return;
+
+    while (r * de > val) {
+      r = r >> 1;
     }
-    r = r >> 1;
+
     val = val - r * de;
     res = res + r;
   }
@@ -233,13 +236,13 @@ void divmod__(bigint& no, bigint& de) {
 }
 
 bigint bigint::operator / (const bigint& rhs) const {
-  bigint no = (*this), de = rhs;
+  bigint no = bigint(this->val_), de = bigint(rhs.val_);
   divmod__(no, de);
   return no;
 }
 
 bigint bigint::operator % (const bigint& rhs) const {
-  bigint no = (*this), de = rhs;
+  bigint no = bigint(this->val_), de = bigint(rhs.val_);
   divmod__(no, de);
   return de;
 }

@@ -193,40 +193,36 @@ bigint bigint::operator / (uint64_t x) const {
   return bigint(v);
 }
 
-bigint bigint::operator % (uint64_t x) const {
-  assert(x != 0);
-  bigint lval = (*this);
-  if (lval < x) return lval;
-  if (lval == x) return 0;
-  uint64_t c = 0;
-  for (int i = lval.size() - 1; i >= 0; --i) {
-    uint128_t val = (static_cast<uint128_t>(c) << 64) | lval.val_[i];
-    c = static_cast<uint64_t>(val % x);
+void divmod__(bigint& no, bigint& de) {
+  bigint res = 0;
+  bigint val = no;
+  while (val >= de) {
+    bigint r = 1;
+    while (r * de < val) {
+      r = r << 1;
+    }
+    if (r * de == val) {
+      no = res + r;
+      de = 0;
+      return;
+    }
+    r = r >> 1;
+    val = val - r * de;
+    res = res + r;
   }
-  return bigint(c);
-}  
-
-uint64_t div__(const bigint& no, const bigint& de) {
-  assert(no.size() <= de.size() + 1);
-  if (no < de) return 0;
-  if (no == de) return 1;
-
-  return 0;
+  no = res;
+  de = val;
 }
 
-
 bigint bigint::operator / (const bigint& rhs) const {
-  if (rhs.size() == 1) return (*this) / rhs.val_[0];
-  if ((*this) < rhs) return 0;
-  if ((*this) == rhs) return 1;
-
-  return 0;
+  bigint no = (*this), de = rhs;
+  divmod__(no, de);
+  return no;
 }
 
 bigint bigint::operator % (const bigint& rhs) const {
-  assert(rhs != 0);
-  bigint res = (*this);
-
-  return res;
+  bigint no = (*this), de = rhs;
+  divmod__(no, de);
+  return de;
 }
   

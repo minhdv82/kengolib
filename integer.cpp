@@ -17,13 +17,24 @@ inline void add__(uint64_t& x, uint64_t& y) {
   y = val >> 64;
 }
 
+inline void sub__(uint64_t& x, uint64_t& y) {
+  uint128_t val = static_cast<uint128_t>(x);
+  if (val >= y) {
+    x = val - y;
+    y = 0;
+  } else {
+    x = val + (uint128_t(1) << 64) - y;
+    y = 1;
+  }
+}
+
 inline void mul__(uint64_t& x, uint64_t& y) {
   uint128_t val = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
   x = val;
   y = val >> 64;
 }
 
-void bigint::display() {
+void bigint::display() const {
   for (auto v : val_) std::cout << v << "-";
   std::cout << std::endl;
 }
@@ -65,6 +76,29 @@ bigint bigint::operator+ (const bigint& rhs) const {
   return bigint(v);
 }
 
+bigint bigint::operator - (const bigint& rhs) const {
+  if (*this <= rhs) return 0;
+  std::vector<uint64_t> v = this->val_, u = rhs.val_;
+  size_t usz = u.size(), vsz = v.size();
+  uint64_t c = 0;
+  size_t i = 0;
+  for (i = 0; i < usz; ++i) {
+    sub__(v[i], u[i]);
+    sub__(v[i], c);
+    c += u[i];
+  }
+
+  i = usz;
+  while (c > 0) {
+    if (i >= vsz) {
+      v.push_back(c);
+      break;
+    }
+    sub__(v[i++], c);
+  }
+  return bigint(v);
+}
+
 bigint bigint::operator >> (int n) const {
   std::vector<uint64_t> v = this->val_;
   if (n < 1) return bigint(v);
@@ -79,10 +113,6 @@ bigint bigint::operator >> (int n) const {
     c = (v[i]) << (64 - n);
     v[i] = val;
   }
-
-  // while (v.back() == 0 and v.size() > 1) {
-  //   v.pop_back();
-  // }
 
   return bigint(v);
 }
@@ -176,9 +206,27 @@ bigint bigint::operator % (uint64_t x) const {
   return bigint(c);
 }  
 
-bigint bigint::operator/ (const bigint& rhs) const {
-  assert(rhs != 0);
+uint64_t div__(const bigint& no, const bigint& de) {
+  assert(no.size() <= de.size() + 1);
+  if (no < de) return 0;
+  if (no == de) return 1;
 
+  return 0;
 }
 
+
+bigint bigint::operator / (const bigint& rhs) const {
+  if (rhs.size() == 1) return (*this) / rhs.val_[0];
+  if ((*this) < rhs) return 0;
+  if ((*this) == rhs) return 1;
+
+  return 0;
+}
+
+bigint bigint::operator % (const bigint& rhs) const {
+  assert(rhs != 0);
+  bigint res = (*this);
+
+  return res;
+}
   

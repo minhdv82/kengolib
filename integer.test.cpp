@@ -30,6 +30,8 @@ int main() {
     yy.display();
     assert(x * y == y * x);
     assert((x + y) * x == x * (y + x));
+    assert(x * (x + y) == x * x + x * y);
+    assert((x + y) - x == y);
     assert(r + s == s + r);
     assert(r < q);
     assert(yy <= y);

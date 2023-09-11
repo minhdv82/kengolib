@@ -73,13 +73,9 @@ T pow_mod(const T x, const T n, const T p) {
   T k = n, r = x % p;
   T res = 1;
   while (k > 0) {
-    if (k & 1 > 0){
-      k = k - 1;
-      res = (res * r) % p;
-    } else {
-      r = (r * r) % p;
-      k = k >> 1;
-    }
+    if (k & 1) res = (res * r) % p;
+    k = k >> 1;
+    r = (r * r) % p;
   }
   return res;
 }

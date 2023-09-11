@@ -38,7 +38,6 @@ int main() {
 
   bigint e({12345}), n({54321}), p({56789});
   bigint enp = pow_mod(e, n, p);
-  enp.display();
   assert(enp == 30482);
 
   std::cout << "Test passed\n";

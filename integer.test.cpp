@@ -16,9 +16,9 @@
 int main() {
   Rand rng(82 + time(nullptr));
   for (int i = 0; i < 100; ++i) {
-    bigint x({rng.int64(), rng.int64(), rng.int64(), rng.int64()});
-    bigint y({rng.int64(), rng.int64(), rng.int64(), rng.int64()});
-    bigint e({rng.int64()});
+    bigint x({rng.uint64(), rng.uint64(), rng.uint64(), rng.uint64()});
+    bigint y({rng.uint64(), rng.uint64(), rng.uint64(), rng.uint64()});
+    bigint e({rng.uint64()});
 
     bigint s = x / y, r = x % y;
     bigint xx = s * y + r;

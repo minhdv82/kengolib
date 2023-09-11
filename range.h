@@ -4,6 +4,9 @@
  * You are free to use, modify, re-distribute this code at your own risk
  */
 #pragma once
+
+#include "utils.h"
+
 #include <map>
 
 template <typename K, typename V>
@@ -67,12 +70,10 @@ class Range {
 
 template <typename K, typename V>
 Range<K, V>* generate(int num_elem, const V& ob_val) {
-  #include <time.h>
-  #include <stdlib.h>
-  srand(time(NULL) + 137);
+  Rand rng(82 + time(nullptr));
   Range<K, V>* im = new Range<K, V>{ob_val};
   for (int i = 0; i < num_elem; ++i) {
-    int lo = -i + std::rand(), hi = std::rand() / 3, val = std::rand();
+    int lo = -i + rng.uint32(), hi = rng.uint32() / 3, val = rng.uint32();
     im->assign(static_cast<K>(lo), static_cast<K>(hi), static_cast<V>(val));
   }
   return im;

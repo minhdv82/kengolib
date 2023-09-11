@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include <iostream>
-#include <cassert>
 
 inline void add__(uint64_t& x, uint64_t& y) {
   uint128_t val = static_cast<uint128_t>(x) + static_cast<uint128_t>(y);
@@ -176,7 +175,7 @@ bigint bigint::operator* (const bigint& rhs) const {
 }
 
 bigint bigint::operator / (uint64_t x) const {
-  assert(x != 0);
+  if (x == 0) return 0;
   bigint lval = (*this);
   if (lval < x) return 0;
   if (lval == x) return 1;

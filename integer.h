@@ -6,6 +6,8 @@
 #pragma once
 
 #include <stdint.h>
+
+#include <iostream>
 #include <vector>
 
 typedef unsigned __int128 uint128_t;
@@ -78,6 +80,25 @@ T pow_mod(const T& x, const T& n, const T& p) {
     r = (r * r) % p;
   }
   return res;
+}
+
+// primality test employing Fermat's little theorem
+// this fails for Carmichael numbers, though ^_^
+template <typename T>
+bool is_prime(const T& x) {
+  if (x == 2) return true;
+  T e(2);
+  return (pow_mod(e, x, x) == e);
+}
+
+// find the first prime number that is greater than x
+template <typename T>
+T make_prime(const T& x) {
+  T val = (x & 1)? x : x + 1;
+  while (!is_prime(val)) {
+    val = val + 2;
+  }
+  return val;
 }
 
 struct bigint {

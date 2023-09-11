@@ -33,7 +33,6 @@ int main() {
     assert(x * (x + y) == x * x + x * y);
     assert((x + y) - x == y);
     assert(x - (x + 1) == 0);
-    // euclid(x, y);
   }
 
   bigint e({12345}), n({54321}), p({56789});

@@ -41,7 +41,7 @@ void swap_x(T& x, T& y) {
 }
 
 template <typename T>
-T gcd(const T a, const T b) {
+T gcd(const T& a, const T& b) {
   if (b == 0) return a;
   return gcd(b, a % b);
 };
@@ -69,7 +69,7 @@ void euclid(T& a, T& b) {
 
 // compute x^n modulo p
 template <typename T>
-T pow_mod(const T x, const T n, const T p) {
+T pow_mod(const T& x, const T& n, const T& p) {
   T k = n, r = x % p;
   T res = 1;
   while (k > 0) {
@@ -92,8 +92,6 @@ struct bigint {
   bigint() : val_{{0}} {}
   bigint(uint64_t x) : val_{{x}} {}
   bigint(const std::vector<uint64_t>& val) : val_{val} { canonize(); }
-  bigint(const bigint& rhs) : val_{rhs.val_} { canonize(); }
-  // bigint(const bigint& rhs) = default;
   bigint operator + (const bigint&) const;
   bigint operator - (const bigint&) const;
   bigint operator * (const bigint&) const;

@@ -35,9 +35,14 @@ int main() {
     assert(x - (x + 1) == 0);
   }
 
-  bigint e({12345}), n({54321}), p({56789});
+  bigint e(12345), n(54321), p(56789);
   bigint enp = pow_mod(e, n, p);
   assert(enp == 30482);
+
+  bigint x(12345678987654321);
+  assert(!is_prime(x));
+  x = make_prime(x); // becomes 12345678987654373
+  assert(is_prime(x));
 
   std::cout << "Test passed\n";
 

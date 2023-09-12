@@ -113,6 +113,8 @@ struct bigint {
   bigint() : val_{{0}} {}
   bigint(uint64_t x) : val_{{x}} {}
   bigint(const std::vector<uint64_t>& val) : val_{val} { canonize(); }
+  bigint(bigint&& rhs) : val_{std::move(rhs.val_)} {}
+  bigint(const bigint& rhs) : val_{rhs.val_} {}
   bigint operator + (const bigint&) const;
   bigint operator - (const bigint&) const;
   bigint operator * (const bigint&) const;
@@ -123,6 +125,7 @@ struct bigint {
   bigint operator >> (int) const;
   bigint operator << (int) const;
   uint64_t operator & (uint64_t x) const { return this->val_[0] & x; }
+  bigint& operator = (const bigint& rhs) { this->val_ = rhs.val_; return *this; }
   bool operator == (const bigint&) const;
   bool operator != (const bigint& rhs) const { return !((*this) == rhs); }
   bool operator == (uint64_t x) const { return (this->size() == 1 && this->val_[0] == x); }

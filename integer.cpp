@@ -27,6 +27,10 @@ inline void sub__(uint64_t& x, uint64_t& y) {
   }
 }
 
+/*
+This subroutine multiplies two unsigned 64 bit
+then stores the result and carry
+*/
 inline void mul__(uint64_t& x, uint64_t& y) {
   uint128_t val = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
   x = val;
@@ -34,7 +38,8 @@ inline void mul__(uint64_t& x, uint64_t& y) {
 }
 
 void bigint::display() const {
-  for (auto v : val_) std::cout << v << "-";
+  std::cout << val_.front();
+  for (size_t i = 1; i < val_.size(); ++i) std::cout << "-" << val_[i];
   std::cout << std::endl;
 }
 
@@ -64,7 +69,6 @@ bigint bigint::operator+ (const bigint& rhs) const {
     c += u[i];
   }
 
-  i = usz;
   while (c > 0) {
     if (i >= vsz) {
       v.push_back(c);
@@ -87,7 +91,6 @@ bigint bigint::operator - (const bigint& rhs) const {
     c += u[i];
   }
 
-  i = usz;
   while (c > 0) {
     if (i >= vsz) {
       v.push_back(c);
@@ -193,16 +196,12 @@ bigint bigint::operator / (uint64_t x) const {
 }
 
 void divmod__(bigint& no, bigint& de) {
-  bigint res = 0;
+  bigint earl = 0;
   bigint val = no;
   while (val >= de) {
     if (val == de) {
-      no = res + 1;
+      no = earl + 1;
       de = 0;
-      return;
-    } else if (val == 0) {
-      de = 0;
-      no = res;
       return;
     }
     uint128_t v = val.val_.back(), u = de.val_.back();
@@ -228,9 +227,9 @@ void divmod__(bigint& no, bigint& de) {
     }
 
     val = val - r * de;
-    res = res + r;
+    earl = earl + r;
   }
-  no = res;
+  no = earl;
   de = val;
 }
 

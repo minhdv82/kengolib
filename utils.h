@@ -17,4 +17,11 @@ public:
   uint32_t uint32(uint32_t n = 0xffffFFFF) { return static_cast<uint32_t>(gen_() % n); }
   int32_t int32() { return static_cast<int32_t>(gen_()); }
   double_t doub() { return static_cast<double_t>(gen_()) / 0xffffffffFFFFFFFF; }
+  template <typename T>
+  T uniform(T from, T to) {
+    T gap = to - from;
+    T val = static_cast<T>(gen_()) % gap;
+    if (val < 0) val += gap;
+    return from + val;
+  }
 };

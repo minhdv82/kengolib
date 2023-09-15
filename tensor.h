@@ -21,7 +21,7 @@ public:
   Shape(Shape& rhs) : value_{std::move(rhs.value_)} {}
   Shape(Shape&& rhs) : value_{std::move(rhs.value_)} {}
   s_type size() const { return std::accumulate(value_.begin(), value_.end(), 1, std::multiplies<s_type>()); }
-  auto rank() const { return value_.size(); }
+  size_t rank() const { return (this->value_).size(); }
 
   bool operator == (const Shape& rhs) const noexcept {
     return this->value_ == rhs.value_;
@@ -74,6 +74,7 @@ public:
     value_ = {this->size()};
   }
 
+  auto value() const { return value_; }
 private:
   std::vector<s_type> value_;
 };
@@ -85,7 +86,9 @@ public:
   Tensor() : value_{}, shape_{Shape()} {}
   Tensor(const Shape& shape, const std::vector<val_type>& val) : value_{val}, shape_{shape} {}
   Tensor(Shape&& shape, std::vector<val_type>&& val) : value_{std::move(val)}, shape_{std::move(shape)} {}
-  auto rank() const { return shape_.size(); }
+  Tensor(const Tensor& rhs) : shape_{rhs.shape_}, value_{rhs.value_} {}
+  size_t rank() const { return shape_.rank(); }
+  auto size() const { return shape_.size(); }
   void reshape(const std::vector<Shape::s_type>& shape) { shape_.reshape(shape); }
   void flatten() noexcept { shape_.flatten(); } // flatten only affects shape of the tensor, not its value rep
   void extend(int dim) noexcept { shape_.extend(dim); }
@@ -125,16 +128,58 @@ public:
 
   Tensor operator + (const Tensor& rhs) const noexcept {
     if (!this->is_compatible(rhs)) return Tensor::None();
-    Tensor& big = (this->rank() > rhs.rank()) ? &this : &rhs;
-    Tensor& sml = (&big == &this) ? &rhs : &this;
+
+    if (this->shape_ == rhs.shape_) { // identical shaped
+      Shape shape = this->shape_;
+      auto val = this->value_;
+      for (auto i = 0; i < val.size(); ++i)
+        val[i] += rhs.value_[i];
+      return Tensor(shape, val);
+    }
+
+    const Tensor& big = (this->rank() > rhs.rank()) ? *this : rhs;
+    const Tensor& sml = (&big == this) ? rhs : *this;
 
     size_t bsz = big.shape_.size(), ssz = sml.shape_.size();
+    auto big_sh = big.shape(), sml_sh = sml.shape();
     std::vector<Shape::s_type> shape(big.rank(), 1);
     for (size_t i = 0; i < bsz; ++i) {
       if (i < bsz - ssz) {
-        shape[i] = big.shape_.value_[i];
+        shape[i] = big_sh[i];
       } else {
-        shape[i] = std::max(big.shape_.value_[i], sml.shape_.value_[i + ssz - bsz]);
+        shape[i] = std::max(big_sh[i], sml_sh[i + ssz - bsz]);
+      }
+    }
+    Tensor res = Tensor::None();
+    return res;
+  }
+
+  Tensor operator - (const Tensor& rhs) const noexcept {
+    return (*this) + rhs * (-1);
+  }
+
+  Tensor operator * (const Tensor& rhs) const noexcept {
+    if (!this->is_compatible(rhs)) return Tensor::None();
+
+    if (this->shape_ == rhs.shape_) { // identical
+      Shape shape = this->shape_;
+      auto val = this->value_;
+      for (auto i = 0; i < val.size(); ++i)
+        val[i] *= rhs.value_[i];
+      return Tensor(shape, val);
+    }
+
+    const Tensor& big = (this->rank() > rhs.rank()) ? *this : rhs;
+    const Tensor& sml = (&big == this) ? rhs : *this;
+
+    size_t bsz = big.shape_.size(), ssz = sml.shape_.size();
+    auto big_sh = big.shape(), sml_sh = sml.shape();
+    std::vector<Shape::s_type> shape(big.rank(), 1);
+    for (size_t i = 0; i < bsz; ++i) {
+      if (i < bsz - ssz) {
+        shape[i] = big_sh[i];
+      } else {
+        shape[i] = std::max(big_sh[i], sml_sh[i + ssz - bsz]);
       }
     }
     Tensor res = Tensor::None();
@@ -147,6 +192,7 @@ public:
     return this->value_ == rhs.value_;
   }
 
+  auto shape() const { return shape_.value(); }
 private:
   Shape shape_;
   std::vector<val_type> value_;

@@ -7,13 +7,17 @@
 #include "integer.h"
 #include "utils.h"
 
+#include <gtest/gtest.h>
+
 #include "time.h"
+
+
 
 #include <iostream>
 #include <vector>
 #include <cassert>
 
-int main() {
+TEST(test_dynamic, test_math) {
   Rand rng(82 + time(nullptr));
   for (int i = 0; i < 100; ++i) {
     bigint x({rng.uint64(), rng.uint64(), rng.uint64(), rng.uint64()});
@@ -25,26 +29,30 @@ int main() {
     bigint g = gcd(x, y);
     bigint np = pow_mod(x, e, x);
     bigint npp = pow_mod(e, x, e + 1);
-    assert(np == 0 && npp != 0);
-    assert(x % g == 0 && y % g == 0);
-    assert(xx == x);
-    assert(x * y == y * x);
-    assert((x + y) * x == x * (y + x));
-    assert(x * (x + y) == x * x + x * y);
-    assert((x + y) - x == y);
-    assert(x - (x + 1) == 0);
+    ASSERT_TRUE(np == 0 && npp != 0);
+    ASSERT_TRUE(x % g == 0 && y % g == 0);
+    ASSERT_EQ(xx, x);
+    ASSERT_EQ(x * y, y * x);
+    ASSERT_EQ((x + y) * x, x * (y + x));
+    ASSERT_EQ(x * (x + y), x * x + x * y);
+    ASSERT_EQ((x + y) - x, y);
+    ASSERT_EQ(x - (x + 1), 0);
   }
+};
 
-  bigint e(12345), n(54321), p(56789);
-  bigint enp = pow_mod(e, n, p);
-  assert(enp == 30482);
+bigint e(12345), n(54321), p(56789);
+bigint enp = pow_mod(e, n, p);
+bigint x(12345678987654321);
+bigint y = make_prime(x); // becomes 12345678987654373
 
-  bigint x(12345678987654321);
-  assert(!is_prime(x));
-  x = make_prime(x); // becomes 12345678987654373
-  assert(is_prime(x));
+TEST(test_static_comp, test_prime) {
+  ASSERT_EQ(enp, 30482);
+  ASSERT_FALSE(is_prime(x));
+  ASSERT_TRUE(is_prime(y));
+};
 
-  std::cout << "Test passed\n";
 
-  return 0;
+int main(int argc, char** argv) { 
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

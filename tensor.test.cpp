@@ -6,20 +6,25 @@
 
 #include "tensor.h"
 
-#include <iostream>
-#include <cassert>
-#include <vector>
+#include <gtest/gtest.h>
 
-auto main() -> int {
-  kl::Shape shp1(std::vector<uint64_t>{1, 2, 3});
-  kl::Tensor<int> x(shp1, std::vector<int>(1, 6));
-  
-  kl::Shape shp2(std::vector<uint64_t>{10, 3, 2, 1});
-  kl::Tensor<int> y(shp2, std::vector<int>(1, 6));
+using kl::Tensor;
+using kl::Shape;
 
-  assert(x.is_compatible(y));
+Shape shp1(std::vector<uint64_t>{1, 2, 3});
+Tensor<int> x(shp1, std::vector<int>(1, 6));
 
-  std::cout << "Test passed!\n" ;
+Shape shp2(std::vector<uint64_t>{10, 3, 2, 1});
+Tensor<int> y(shp2, std::vector<int>(1, 6));
+Tensor z = x * 5;
 
-  return 0;
+TEST(Foo, Bar) {
+  EXPECT_EQ(x, x * 1);
+  EXPECT_FALSE(y == y * 2);
+  EXPECT_TRUE(y.is_compatible(x));
+}
+
+int main(int argc, char** argv) { 
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

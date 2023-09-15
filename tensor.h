@@ -23,6 +23,10 @@ public:
   s_type size() const { return std::accumulate(value_.begin(), value_.end(), 1, std::multiplies<s_type>()); }
   auto rank() const { return value_.size(); }
 
+  bool operator == (const Shape& rhs) const noexcept {
+    return this->value_ == rhs.value_;
+  }
+
   bool is_none() const { return this->rank() < 1; }
   void extend(int dim) {
     int sz = this->size();
@@ -100,6 +104,13 @@ public:
     return (*this);
   } // sclar product
 
+  Tensor operator * (val_type x) const noexcept {
+    if (this->is_none()) return *this;
+    auto res = (*this);
+    for (auto& val : res.value_) val *= x;
+    return res;
+  } // sclar product
+
   Tensor operator += (val_type x) noexcept {
     if (this->is_none()) return (*this);
     for (auto& val : value_) val += x;
@@ -129,7 +140,12 @@ public:
     Tensor res = Tensor::None();
     return res;
   }
-  Tensor operator * (const Tensor& rhs) const noexcept; // hadamard product
+
+  bool operator == (const Tensor& rhs) const noexcept {
+    if (this->is_none() && rhs.is_none()) return true;
+    if (!(this->shape_ == rhs.shape_)) return false;
+    return this->value_ == rhs.value_;
+  }
 
 private:
   Shape shape_;

@@ -53,15 +53,15 @@ public:
     // None is compatible with every tensor
     if (rhs.is_none() || this->is_none()) return true;
     auto us_it = this->value_.end(), them_it = rhs.value_.end();
-
+    auto b_us = this->value_.begin(), b_them = rhs.value_.begin();
     do {
       if (*(--us_it) == *(--them_it)) {
         continue;
       } else if (*us_it != 1 && *them_it != 1) {
         return false;
       }
-    } while (us_it != this->value_.begin() && them_it != rhs.value_.begin());
-    return true;
+    } while (us_it != b_us && them_it != b_them);
+    return (*us_it == *them_it || *us_it == 1 || *them_it == 1);
   }
 
   void reshape(const std::vector<s_type>& v) {
@@ -204,6 +204,11 @@ public:
   }
 
   auto shape() const { return shape_.value(); }
+
+  friend std::ostream& operator << (std::ostream& o, const Tensor& rhs) {
+    o << rhs.shape_;
+    return o;
+  }
 private:
   Shape shape_;
   std::vector<val_type> value_;

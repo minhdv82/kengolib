@@ -52,6 +52,9 @@ TEST(test_dynamic, dynamic_foo) {
     sh.contract(0);
     shp.flatten();
     ASSERT_EQ(sh.size(), shp.size());
+    tmu.contract(0);
+    tpu.extend(1);
+    ASSERT_FALSE(tmu.is_compatible(tpu));
   }
 }
 

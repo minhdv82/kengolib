@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <iostream>
 #include <vector>
 #include <numeric>
 
@@ -29,14 +30,14 @@ public:
 
   bool is_none() const { return this->rank() < 1; }
   void extend(int dim) {
-    int sz = this->size();
+    int sz = this->rank();
     if (dim < -sz) return;
     if (dim < 0) dim += sz;
     this->value_.insert(value_.begin() + dim, 1);
   }
 
   void contract(int dim) {
-    int sz = this->size();
+    int sz = this->rank();
     if (dim < -sz) return;
     if (dim < 0) dim += sz;
     s_type d = value_[dim];
@@ -75,6 +76,16 @@ public:
   }
 
   auto value() const { return value_; }
+  friend std::ostream& operator << (std::ostream& o, const Shape& rhs) {
+    if (rhs.is_none()) return o;
+    auto it = rhs.value_.begin(), lt = rhs.value_.end();
+    o << "(" << *(it++);
+    while (it != lt) {
+      o << ", " << *(it++);
+    }
+    o << ")\n";
+    return o;
+  }
 private:
   std::vector<s_type> value_;
 };
@@ -114,16 +125,16 @@ public:
     return res;
   } // sclar product
 
-  Tensor operator += (val_type x) noexcept {
+  Tensor operator + (val_type x) noexcept {
     if (this->is_none()) return (*this);
-    for (auto& val : value_) val += x;
-    return (*this);
+    auto value = this->value_;
+    for (auto& val : value) val += x;
+    return Tensor(this->shape_, value);
   } // sclar addition
 
-  Tensor operator -= (val_type x) noexcept {
+  Tensor operator - (val_type x) noexcept {
     x = -x;
-    (*this) += x;
-    return (*this);
+    return (*this) + x;
   }
 
   Tensor operator + (const Tensor& rhs) const noexcept {

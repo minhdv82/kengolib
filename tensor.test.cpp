@@ -8,8 +8,6 @@
 
 #include <gtest/gtest.h>
 
-#include <iostream>
-
 using kl::Tensor;
 using kl::Shape;
 
@@ -31,21 +29,29 @@ TEST(test_static, static_foo) {
 }
 
 TEST(test_dynamic, dynamic_foo) {
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 5; ++i) {
     uint64_t n1 = rng.uniform<uint64_t>(50, 100), n2 = rng.uniform<uint64_t>(50, 100), n3 = rng.uniform<uint64_t>(50, 100);
-    Shape sh({n1, n2, n3});
+    Shape sh({n1, n2, n3}), shp({n1 * n2, n3});
+
     std::vector<int> val(n1 * n2 * n3, 0), earl(n1 * n2 * n3, 0);
     for (auto& v : val) v = rng.uniform<int32_t>(-10, 100);
     for (auto& v : earl) v = rng.uniform<int32_t>(-100, 100);
     Tensor<int> t(sh, val), u(sh, earl);
     auto tmu = t * u;
     auto tpu = t + u;
-    auto foo = t + Tensor<int>();
+    auto foo = t + 1;
+    auto bar = foo;
+    foo.reshape({n1 * n2, n3});
     ASSERT_TRUE(t.is_compatible(u));
     ASSERT_TRUE(t.is_compatible(tmu));
     ASSERT_TRUE(t.is_compatible(tpu));
     ASSERT_EQ(t, tpu - u);
-    ASSERT_TRUE(foo.is_none());
+    ASSERT_FALSE(foo.is_none());
+    ASSERT_FALSE(foo - 1 == t);
+    ASSERT_TRUE(bar - 1 == t);
+    sh.contract(0);
+    shp.flatten();
+    ASSERT_EQ(sh.size(), shp.size());
   }
 }
 

@@ -14,7 +14,7 @@ namespace kl {
 class Shape final {
 public:
   typedef uint64_t s_type;
-  Shape() : value_{{}} {}
+  Shape() : value_{} {}
   Shape(std::vector<s_type>& val) : value_{val} {}
   Shape(std::vector<s_type>&& val) : value_{std::move(val)} {}
   Shape(const Shape& rhs) : value_{rhs.value_} {}
@@ -83,8 +83,8 @@ template <typename val_type>
 class Tensor {
 static Tensor None() { return Tensor(); }
 public:
-  Tensor() : value_{}, shape_{Shape()} {}
-  Tensor(const Shape& shape, const std::vector<val_type>& val) : value_{val}, shape_{shape} {}
+  Tensor() : value_{}, shape_{} {}
+  Tensor(const Shape& shape, const std::vector<val_type>& val) : shape_{shape}, value_{val} {}
   Tensor(Shape&& shape, std::vector<val_type>&& val) : value_{std::move(val)}, shape_{std::move(shape)} {}
   Tensor(const Tensor& rhs) : shape_{rhs.shape_}, value_{rhs.value_} {}
   size_t rank() const { return shape_.rank(); }
@@ -127,7 +127,7 @@ public:
   }
 
   Tensor operator + (const Tensor& rhs) const noexcept {
-    if (!this->is_compatible(rhs)) return Tensor::None();
+    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs)) return Tensor::None();
 
     if (this->shape_ == rhs.shape_) { // identical shaped
       Shape shape = this->shape_;
@@ -159,7 +159,7 @@ public:
   }
 
   Tensor operator * (const Tensor& rhs) const noexcept {
-    if (!this->is_compatible(rhs)) return Tensor::None();
+    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs)) return Tensor::None();
 
     if (this->shape_ == rhs.shape_) { // identical
       Shape shape = this->shape_;

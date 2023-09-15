@@ -40,10 +40,12 @@ TEST(test_dynamic, dynamic_foo) {
     Tensor<int> t(sh, val), u(sh, earl);
     auto tmu = t * u;
     auto tpu = t + u;
+    auto foo = t + Tensor<int>();
     ASSERT_TRUE(t.is_compatible(u));
     ASSERT_TRUE(t.is_compatible(tmu));
     ASSERT_TRUE(t.is_compatible(tpu));
     ASSERT_EQ(t, tpu - u);
+    ASSERT_TRUE(foo.is_none());
   }
 }
 

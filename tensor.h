@@ -5,8 +5,6 @@
  */
 #pragma once
 
-#include "types.h"
-
 #include <stdint.h>
 
 #include <vector>
@@ -17,19 +15,60 @@ class Shape final {
 public:
   typedef uint64_t s_type;
   Shape() : value_{{}} {}
-  Shape(std::vector<s_type> val) : value_{val} {}
+  Shape(std::vector<s_type>& val) : value_{val} {}
   Shape(std::vector<s_type>&& val) : value_{std::move(val)} {}
   Shape(const Shape& rhs) : value_{rhs.value_} {}
   Shape(Shape& rhs) : value_{std::move(rhs.value_)} {}
   Shape(Shape&& rhs) : value_{std::move(rhs.value_)} {}
   s_type size() const { return std::accumulate(value_.begin(), value_.end(), 1, std::multiplies<s_type>()); }
   auto rank() const { return value_.size(); }
-  void reshape(const std::vector<s_type>&);
-  void flatten() noexcept;
-  void extend(int) noexcept;
-  void contract(int) noexcept;
-  bool is_compatible(const Shape&) const noexcept;
-  constexpr bool is_none() const { return this->rank() < 1; }
+
+  bool is_none() const { return this->rank() < 1; }
+  void extend(int dim) {
+    int sz = this->size();
+    if (dim < -sz) return;
+    if (dim < 0) dim += sz;
+    this->value_.insert(value_.begin() + dim, 1);
+  }
+
+  void contract(int dim) {
+    int sz = this->size();
+    if (dim < -sz) return;
+    if (dim < 0) dim += sz;
+    s_type d = value_[dim];
+    auto it = value_.erase(value_.begin() + dim);
+    if (it == value_.end()) {
+      *(--it) *= d;
+    } else {
+      (*it) *= d;
+    }
+  }
+
+  bool is_compatible(const Shape& rhs) const {
+    // None is compatible with every tensor
+    if (rhs.is_none() || this->is_none()) return true;
+    auto us_it = this->value_.end(), them_it = rhs.value_.end();
+
+    do {
+      if (*(--us_it) == *(--them_it)) {
+        continue;
+      } else if (*us_it != 1 && *them_it != 1) {
+        return false;
+      }
+    } while (us_it != this->value_.begin() && them_it != rhs.value_.begin());
+    return true;
+  }
+
+  void reshape(const std::vector<s_type>& v) {
+    if (this->is_none() || this->size() != std::accumulate(v.begin(), v.end(), 1, std::multiplies<s_type>()))
+      return;
+    value_ = std::vector<s_type>(v);
+  }
+
+  void flatten() noexcept {
+    if (this->is_none()) return;
+    value_ = {this->size()};
+  }
 
 private:
   std::vector<s_type> value_;
@@ -43,12 +82,12 @@ public:
   Tensor(const Shape& shape, const std::vector<val_type>& val) : value_{val}, shape_{shape} {}
   Tensor(Shape&& shape, std::vector<val_type>&& val) : value_{std::move(val)}, shape_{std::move(shape)} {}
   auto rank() const { return shape_.size(); }
-  void reshape(const std::vector<s_type>& shape) { shape_.reshape(shape); }
-  void flatten() noexcept { shape_.flatten(); }
+  void reshape(const std::vector<Shape::s_type>& shape) { shape_.reshape(shape); }
+  void flatten() noexcept { shape_.flatten(); } // flatten only affects shape of the tensor, not its value rep
   void extend(int dim) noexcept { shape_.extend(dim); }
   void contract(int dim) noexcept { shape_.contract(dim); }
   bool is_compatible(const Tensor& rhs) const noexcept { return shape_.is_compatible(rhs.shape_); }
-  constexpr bool is_none() const { shape_.is_none(); }
+  constexpr bool is_none() const { return shape_.is_none(); }
 
   bool operator > (const Tensor& rhs) const noexcept {
     if (!this->is_compatible(rhs)) return false;
@@ -58,7 +97,7 @@ public:
   Tensor& operator *= (val_type x) noexcept {
     if (this->is_none()) return (*this);
     for (auto& val : value_) val *= x;
-    return (*this)
+    return (*this);
   } // sclar product
 
   Tensor operator += (val_type x) noexcept {
@@ -75,8 +114,19 @@ public:
 
   Tensor operator + (const Tensor& rhs) const noexcept {
     if (!this->is_compatible(rhs)) return Tensor::None();
-    Tensor& res = (this > rhs)? this : rhs;
+    Tensor& big = (this->rank() > rhs.rank()) ? &this : &rhs;
+    Tensor& sml = (&big == &this) ? &rhs : &this;
 
+    size_t bsz = big.shape_.size(), ssz = sml.shape_.size();
+    std::vector<Shape::s_type> shape(big.rank(), 1);
+    for (size_t i = 0; i < bsz; ++i) {
+      if (i < bsz - ssz) {
+        shape[i] = big.shape_.value_[i];
+      } else {
+        shape[i] = std::max(big.shape_.value_[i], sml.shape_.value_[i + ssz - bsz]);
+      }
+    }
+    Tensor res = Tensor::None();
     return res;
   }
   Tensor operator * (const Tensor& rhs) const noexcept; // hadamard product

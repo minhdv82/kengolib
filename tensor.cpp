@@ -60,3 +60,30 @@ void Shape::flatten() noexcept {
   value_ = {this->size()};
   rank_ = 1;
 }
+
+// template <typename val_type>
+// class Tensor {
+//   Tensor& Tensor::operator * (val_type x) {
+//     return Tensor::None;
+//   }
+// }
+
+  
+
+// template <typename val_type>
+// Tensor Tensor::operator + (const Tensor& rhs) {
+//   if (!this->is_compatible(rhs)) return Tensor::None();
+//   return res;
+// };
+
+// template <typename val_type>
+// Tensor& Tensor::operator - (const Tensor& rhs) {
+
+//   return Tensor::None;
+// };
+
+// template <typename val_type>
+// Tensor& Tensor::operator * (const Tensor& rhs) {
+
+//   return Tensor::None;
+// };

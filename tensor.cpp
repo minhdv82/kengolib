@@ -7,20 +7,16 @@
 #include "tensor.h"
 
 #include <stdint.h>
-#include <stdarg.h>
 
 #include <vector>
 #include <numeric>
-
-void Shape::reshape(std::vector<s_type> shape) {
-
-}
 
 void Shape::extend(int dim) {
   int sz = this->size();
   if (dim < -sz) return;
   if (dim < 0) dim += sz;
   value_.insert(value_.begin() + dim, 1);
+  ++rank_;
 }
 
 void Shape::contract(int dim) {
@@ -34,6 +30,7 @@ void Shape::contract(int dim) {
   } else {
     (*it) *= d;
   }
+  --rank_;
 }
 
 bool Shape::is_compatible(const Shape& rhs) const {
@@ -51,3 +48,15 @@ bool Shape::is_compatible(const Shape& rhs) const {
   return true;
 }
 
+void Shape::reshape(const std::vector<s_type>& shape) {
+  if (this->is_none() || this->size() != std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<s_type>()))
+    return;
+  value_ = shape;
+  rank_ = value_.size(); 
+}
+
+void Shape::flatten() noexcept {
+  if (this->is_none()) return;
+  value_ = {this->size()};
+  rank_ = 1;
+}

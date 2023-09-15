@@ -11,7 +11,6 @@
 #include <numeric>
 
 class Shape final {
-static Shape None;
 public:
   typedef uint64_t s_type;
   Shape() : rank_{-1}, value_{} { }
@@ -24,18 +23,18 @@ public:
   Shape(Shape&& rhs) : value_{std::move(rhs.value_)} {}
   s_type size() const { return std::accumulate(value_.begin(), value_.end(), 1, std::multiplies<s_type>()); }
   auto rank() const { return rank_; }
-  void reshape(std::vector<s_type> shape);
-  void extend(int dim);
-  void contract(int dim);
-  bool is_compatible(const Shape& rhs) const;
-  bool is_none() const { return rank_ == -1; }
+  void reshape(const std::vector<s_type>& shape);
+  void flatten() noexcept;
+  void extend(int dim) noexcept;
+  void contract(int dim) noexcept;
+  bool is_compatible(const Shape& rhs) const noexcept;
+  constexpr bool is_none() const { return rank_ == -1; }
 
 private:
-  int rank_;
+  void canonize() { rank_ = (value_.size() > 0)? value_.size() : -1; }
+  int rank_ = -1;
   std::vector<s_type> value_ = {};
 };
-
-Shape Shape::None = Shape();
 
 template <typename T>
 class Tensor {

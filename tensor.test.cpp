@@ -3,13 +3,14 @@
  *
  * You are free to use, modify, re-distribute this code at your own risk.
  */
-#include "utils.h"
 #include "tensor.h"
 
 #include <gtest/gtest.h>
 
-using kl::Tensor;
+#include "utils.h"
+
 using kl::Shape;
+using kl::Tensor;
 
 Rand rng(82 + time(nullptr));
 
@@ -30,7 +31,9 @@ TEST(test_static, static_foo) {
 
 TEST(test_dynamic, dynamic_foo) {
   for (int i = 0; i < 5; ++i) {
-    uint64_t n1 = rng.uniform<uint64_t>(50, 100), n2 = rng.uniform<uint64_t>(50, 100), n3 = rng.uniform<uint64_t>(50, 100);
+    uint64_t n1 = rng.uniform<uint64_t>(50, 100),
+             n2 = rng.uniform<uint64_t>(50, 100),
+             n3 = rng.uniform<uint64_t>(50, 100);
     Shape sh({n1, n2, n3}), shp({n1 * n2, n3});
 
     std::vector<int> val(n1 * n2 * n3, 0), earl(n1 * n2 * n3, 0);
@@ -58,7 +61,7 @@ TEST(test_dynamic, dynamic_foo) {
   }
 }
 
-int main(int argc, char** argv) { 
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -8,12 +8,12 @@
 #include <stdint.h>
 
 #include <iostream>
-#include <vector>
 #include <numeric>
+#include <vector>
 
 namespace kl {
 class Shape final {
-public:
+ public:
   typedef uint64_t s_type;
   Shape() : value_{} {}
   Shape(std::vector<s_type>& val) : value_{val} {}
@@ -21,10 +21,13 @@ public:
   Shape(const Shape& rhs) : value_{rhs.value_} {}
   Shape(Shape& rhs) : value_{std::move(rhs.value_)} {}
   Shape(Shape&& rhs) : value_{std::move(rhs.value_)} {}
-  s_type size() const { return std::accumulate(value_.begin(), value_.end(), 1, std::multiplies<s_type>()); }
+  s_type size() const {
+    return std::accumulate(value_.begin(), value_.end(), 1,
+                           std::multiplies<s_type>());
+  }
   size_t rank() const { return (this->value_).size(); }
 
-  bool operator == (const Shape& rhs) const noexcept {
+  bool operator==(const Shape& rhs) const noexcept {
     return this->value_ == rhs.value_;
   }
 
@@ -65,7 +68,9 @@ public:
   }
 
   void reshape(const std::vector<s_type>& v) {
-    if (this->is_none() || this->size() != std::accumulate(v.begin(), v.end(), 1, std::multiplies<s_type>()))
+    if (this->is_none() ||
+        this->size() !=
+            std::accumulate(v.begin(), v.end(), 1, std::multiplies<s_type>()))
       return;
     value_ = std::vector<s_type>(v);
   }
@@ -76,7 +81,7 @@ public:
   }
 
   auto value() const { return value_; }
-  friend std::ostream& operator << (std::ostream& o, const Shape& rhs) {
+  friend std::ostream& operator<<(std::ostream& o, const Shape& rhs) {
     if (rhs.is_none()) return o;
     auto it = rhs.value_.begin(), lt = rhs.value_.end();
     o << "(" << *(it++);
@@ -86,65 +91,75 @@ public:
     o << ")\n";
     return o;
   }
-private:
+
+ private:
   std::vector<s_type> value_;
 };
 
 template <typename val_type>
 class Tensor {
-static Tensor None() { return Tensor(); }
-public:
+  static Tensor None() { return Tensor(); }
+
+ public:
   Tensor() : value_{}, shape_{} {}
-  Tensor(const Shape& shape, const std::vector<val_type>& val) : shape_{shape}, value_{val} {}
-  Tensor(Shape&& shape, std::vector<val_type>&& val) : value_{std::move(val)}, shape_{std::move(shape)} {}
+  Tensor(const Shape& shape, const std::vector<val_type>& val)
+      : shape_{shape}, value_{val} {}
+  Tensor(Shape&& shape, std::vector<val_type>&& val)
+      : value_{std::move(val)}, shape_{std::move(shape)} {}
   Tensor(const Tensor& rhs) : shape_{rhs.shape_}, value_{rhs.value_} {}
   size_t rank() const { return shape_.rank(); }
   auto size() const { return shape_.size(); }
-  void reshape(const std::vector<Shape::s_type>& shape) { shape_.reshape(shape); }
-  void flatten() noexcept { shape_.flatten(); } // flatten only affects shape of the tensor, not its value rep
+  void reshape(const std::vector<Shape::s_type>& shape) {
+    shape_.reshape(shape);
+  }
+  void flatten() noexcept {
+    shape_.flatten();
+  }  // flatten only affects shape of the tensor, not its value rep
   void extend(int dim) noexcept { shape_.extend(dim); }
   void contract(int dim) noexcept { shape_.contract(dim); }
-  bool is_compatible(const Tensor& rhs) const noexcept { return shape_.is_compatible(rhs.shape_); }
+  bool is_compatible(const Tensor& rhs) const noexcept {
+    return shape_.is_compatible(rhs.shape_);
+  }
   constexpr bool is_none() const { return shape_.is_none(); }
 
-  bool operator > (const Tensor& rhs) const noexcept {
+  bool operator>(const Tensor& rhs) const noexcept {
     if (!this->is_compatible(rhs)) return false;
     return this->rank() > rhs.rank();
   }
 
-  Tensor& operator *= (val_type x) noexcept {
+  Tensor& operator*=(val_type x) noexcept {
     if (this->is_none()) return (*this);
     for (auto& val : value_) val *= x;
     return (*this);
-  } // sclar product
+  }  // sclar product
 
-  Tensor operator * (val_type x) const noexcept {
+  Tensor operator*(val_type x) const noexcept {
     if (this->is_none()) return *this;
     auto res = (*this);
     for (auto& val : res.value_) val *= x;
     return res;
-  } // sclar product
+  }  // sclar product
 
-  Tensor operator + (val_type x) noexcept {
+  Tensor operator+(val_type x) noexcept {
     if (this->is_none()) return (*this);
     auto value = this->value_;
     for (auto& val : value) val += x;
     return Tensor(this->shape_, value);
-  } // sclar addition
+  }  // sclar addition
 
-  Tensor operator - (val_type x) noexcept {
+  Tensor operator-(val_type x) noexcept {
     x = -x;
     return (*this) + x;
   }
 
-  Tensor operator + (const Tensor& rhs) const noexcept {
-    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs)) return Tensor::None();
+  Tensor operator+(const Tensor& rhs) const noexcept {
+    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs))
+      return Tensor::None();
 
-    if (this->shape_ == rhs.shape_) { // identical shaped
+    if (this->shape_ == rhs.shape_) {  // identical shaped
       Shape shape = this->shape_;
       auto val = this->value_;
-      for (auto i = 0; i < val.size(); ++i)
-        val[i] += rhs.value_[i];
+      for (auto i = 0; i < val.size(); ++i) val[i] += rhs.value_[i];
       return Tensor(shape, val);
     }
 
@@ -165,18 +180,18 @@ public:
     return res;
   }
 
-  Tensor operator - (const Tensor& rhs) const noexcept {
+  Tensor operator-(const Tensor& rhs) const noexcept {
     return (*this) + rhs * (-1);
   }
 
-  Tensor operator * (const Tensor& rhs) const noexcept {
-    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs)) return Tensor::None();
+  Tensor operator*(const Tensor& rhs) const noexcept {
+    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs))
+      return Tensor::None();
 
-    if (this->shape_ == rhs.shape_) { // identical
+    if (this->shape_ == rhs.shape_) {  // identical
       Shape shape = this->shape_;
       auto val = this->value_;
-      for (auto i = 0; i < val.size(); ++i)
-        val[i] *= rhs.value_[i];
+      for (auto i = 0; i < val.size(); ++i) val[i] *= rhs.value_[i];
       return Tensor(shape, val);
     }
 
@@ -197,7 +212,7 @@ public:
     return res;
   }
 
-  bool operator == (const Tensor& rhs) const noexcept {
+  bool operator==(const Tensor& rhs) const noexcept {
     if (this->is_none() && rhs.is_none()) return true;
     if (!(this->shape_ == rhs.shape_)) return false;
     return this->value_ == rhs.value_;
@@ -205,13 +220,14 @@ public:
 
   auto shape() const { return shape_.value(); }
 
-  friend std::ostream& operator << (std::ostream& o, const Tensor& rhs) {
+  friend std::ostream& operator<<(std::ostream& o, const Tensor& rhs) {
     o << rhs.shape_;
     return o;
   }
-private:
+
+ private:
   Shape shape_;
   std::vector<val_type> value_;
 };
 
-} // namespace kl
+}  // namespace kl

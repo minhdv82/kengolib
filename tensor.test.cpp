@@ -14,20 +14,35 @@ using kl::Tensor;
 
 Rand rng(82 + time(nullptr));
 
-Shape shp1(std::vector<uint64_t>{1, 2, 3});
-Tensor<int> x(shp1, std::vector<int>(1, 6));
-
-Shape shp2(std::vector<uint64_t>{10, 3, 2, 1});
-Tensor<int> y(shp2, std::vector<int>(1, 6));
-Tensor z = x * 5;
+TEST(test_add, add_change_shape) {
+  Shape shp1(std::vector<uint64_t>{1, 2, 3});
+  Shape shp2(std::vector<uint64_t>{3, 2, 1});
+  Shape shp3(std::vector<uint64_t>{   2, 3});
+  Tensor<int> x1(shp1, std::vector<int>(shp1.size(), 1));
+  Tensor<int> x2(shp2, std::vector<int>(shp2.size(), 2));
+  Tensor<int> x3(shp2, std::vector<int>(shp3.size(), 3));
+  auto z = x1 + x2;
+  ASSERT_TRUE(z.is_compatible(x1));
+  ASSERT_FALSE(z == x2);
+  ASSERT_TRUE(z.is_compatible(z + x3));
+  ASSERT_EQ(z, (z + x3) - x3);
+  ASSERT_TRUE(x3.is_compatible(x3 * z));
+};
 
 TEST(test_static, static_foo) {
+  Shape shp1(std::vector<uint64_t>{1, 2, 3});
+  Tensor<int> x(shp1, std::vector<int>(shp1.size(), 1));
+
+  Shape shp2(std::vector<uint64_t>{10, 3, 2, 1});
+  Tensor<int> y(shp2, std::vector<int>(shp2.size(), 1));
+  Tensor z = x * 5;
+
   EXPECT_EQ(x, x * 1);
   EXPECT_FALSE(y == y * 2);
   EXPECT_TRUE(y.is_compatible(x));
   y.flatten();
   EXPECT_EQ(y.rank(), 1);
-}
+};
 
 TEST(test_dynamic, dynamic_foo) {
   for (int i = 0; i < 5; ++i) {
@@ -59,7 +74,7 @@ TEST(test_dynamic, dynamic_foo) {
     tpu.extend(1);
     ASSERT_FALSE(tmu.is_compatible(tpu));
   }
-}
+};
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

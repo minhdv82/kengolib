@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <functional>
 #include <iostream>
 #include <numeric>
 #include <vector>
@@ -29,6 +30,26 @@ class Shape final {
 
   bool operator==(const Shape& rhs) const noexcept {
     return this->value_ == rhs.value_;
+  }
+
+  Shape operator+(const Shape& rhs) const noexcept {
+    if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs))
+      return Shape();
+    if (this->value_ == rhs.value_) return rhs;
+
+    const Shape& big = (this->rank() > rhs.rank()) ? *this : rhs;
+    const Shape& sml = (this->rank() > rhs.rank()) ? rhs : *this;
+
+    Shape res = big;
+    auto bsz = big.rank(), ssz = sml.rank();
+    for (size_t i = 0; i < bsz; ++i) {
+      if (i < bsz - ssz) {
+        res.value_[i] = big.value_[i];
+      } else {
+        res.value_[i] = std::max(big.value_[i], sml.value_[i + ssz - bsz]);
+      }
+    }
+    return res;
   }
 
   bool is_none() const { return this->rank() < 1; }
@@ -56,7 +77,7 @@ class Shape final {
     // None is compatible with every tensor
     if (rhs.is_none() || this->is_none()) return true;
     auto us_it = this->value_.end(), them_it = rhs.value_.end();
-    auto b_us = this->value_.begin(), b_them = rhs.value_.begin();
+    const auto b_us = this->value_.begin(), b_them = rhs.value_.begin();
     do {
       if (*(--us_it) == *(--them_it)) {
         continue;
@@ -122,62 +143,43 @@ class Tensor {
   }
   constexpr bool is_none() const { return shape_.is_none(); }
 
-  bool operator>(const Tensor& rhs) const noexcept {
-    if (!this->is_compatible(rhs)) return false;
-    return this->rank() > rhs.rank();
-  }
-
   Tensor& operator*=(val_type x) noexcept {
     if (this->is_none()) return (*this);
     for (auto& val : value_) val *= x;
     return (*this);
-  }  // sclar product
+  }
 
   Tensor operator*(val_type x) const noexcept {
     if (this->is_none()) return *this;
     auto res = (*this);
     for (auto& val : res.value_) val *= x;
     return res;
-  }  // sclar product
+  }
 
   Tensor operator+(val_type x) noexcept {
     if (this->is_none()) return (*this);
     auto value = this->value_;
     for (auto& val : value) val += x;
     return Tensor(this->shape_, value);
-  }  // sclar addition
-
-  Tensor operator-(val_type x) noexcept {
-    x = -x;
-    return (*this) + x;
   }
+
+  Tensor operator-(val_type x) noexcept { return (*this) + (-x); }
 
   Tensor operator+(const Tensor& rhs) const noexcept {
     if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs))
       return Tensor::None();
 
-    if (this->shape_ == rhs.shape_) {  // identical shaped
-      Shape shape = this->shape_;
-      auto val = this->value_;
-      for (auto i = 0; i < val.size(); ++i) val[i] += rhs.value_[i];
-      return Tensor(shape, val);
+    if (this->shape_ == rhs.shape_) {
+      Tensor res = *this;
+      for (auto i = 0; i < res.value_.size(); ++i)
+        res.value_[i] += rhs.value_[i];
+      return res;
     }
 
-    const Tensor& big = (this->rank() > rhs.rank()) ? *this : rhs;
-    const Tensor& sml = (&big == this) ? rhs : *this;
-
-    size_t bsz = big.shape_.size(), ssz = sml.shape_.size();
-    auto big_sh = big.shape(), sml_sh = sml.shape();
-    std::vector<Shape::s_type> shape(big.rank(), 1);
-    for (size_t i = 0; i < bsz; ++i) {
-      if (i < bsz - ssz) {
-        shape[i] = big_sh[i];
-      } else {
-        shape[i] = std::max(big_sh[i], sml_sh[i + ssz - bsz]);
-      }
-    }
-    Tensor res = Tensor::None();
-    return res;
+    const Shape shp = this->shape_ + rhs.shape_;
+    std::vector<val_type> value(shp.size(), 0);
+    return this->op_vshape(
+        rhs, shp, [](val_type l, val_type r) -> val_type { return l + r; });
   }
 
   Tensor operator-(const Tensor& rhs) const noexcept {
@@ -188,34 +190,21 @@ class Tensor {
     if (this->is_none() || rhs.is_none() || !this->is_compatible(rhs))
       return Tensor::None();
 
-    if (this->shape_ == rhs.shape_) {  // identical
-      Shape shape = this->shape_;
-      auto val = this->value_;
-      for (auto i = 0; i < val.size(); ++i) val[i] *= rhs.value_[i];
-      return Tensor(shape, val);
+    if (this->shape_ == rhs.shape_) {
+      Tensor res = *this;
+      for (auto i = 0; i < res.value_.size(); ++i)
+        res.value_[i] *= rhs.value_[i];
+      return res;
     }
 
-    const Tensor& big = (this->rank() > rhs.rank()) ? *this : rhs;
-    const Tensor& sml = (&big == this) ? rhs : *this;
-
-    size_t bsz = big.shape_.size(), ssz = sml.shape_.size();
-    auto big_sh = big.shape(), sml_sh = sml.shape();
-    std::vector<Shape::s_type> shape(big.rank(), 1);
-    for (size_t i = 0; i < bsz; ++i) {
-      if (i < bsz - ssz) {
-        shape[i] = big_sh[i];
-      } else {
-        shape[i] = std::max(big_sh[i], sml_sh[i + ssz - bsz]);
-      }
-    }
-    Tensor res = Tensor::None();
-    return res;
+    Shape shp = this->shape_ + rhs.shape_;
+    return this->op_vshape(
+        rhs, shp, [](val_type l, val_type r) -> val_type { return l * r; });
   }
 
   bool operator==(const Tensor& rhs) const noexcept {
     if (this->is_none() && rhs.is_none()) return true;
-    if (!(this->shape_ == rhs.shape_)) return false;
-    return this->value_ == rhs.value_;
+    return (this->shape_ == rhs.shape_ && this->value_ == rhs.value_);
   }
 
   auto shape() const { return shape_.value(); }
@@ -226,6 +215,36 @@ class Tensor {
   }
 
  private:
+  Tensor op_vshape(const Tensor& rhs, const Shape& out_shape,
+                   std::function<val_type(val_type, val_type)> bin_op) const {
+    auto expand = [&out_shape](Shape& shp) {
+      while (shp.rank() < out_shape.rank()) {
+        shp.extend(0);
+      }
+    };
+    auto div = [&out_shape](const Shape& shp) {
+      auto res = 1;
+      for (auto i = 0; i < shp.rank(); ++i) {
+        if (shp.value()[i] == 1)
+          res *= out_shape.value()[i];
+        else
+          break;
+      }
+      return res;
+    };
+    Shape l_shp = this->shape_, r_shp = rhs.shape_;
+    auto const l_val = this->value_, r_val = rhs.value_;
+    expand(l_shp);
+    expand(r_shp);
+    auto l_div = div(l_shp), r_div = div(r_shp);
+    std::vector<val_type> val(out_shape.size(), 0);
+    auto lsz = l_shp.size(), rsz = r_shp.size(), osz = out_shape.size();
+    for (auto i = 0; i < osz; ++i) {
+      auto l_idx = (i / l_div) % lsz, r_idx = (i / r_div) % rsz; // hacky but works
+      val[i] = bin_op(l_val[l_idx], r_val[r_idx]);
+    }
+    return Tensor(out_shape, val);
+  };
   Shape shape_;
   std::vector<val_type> value_;
 };

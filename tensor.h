@@ -62,6 +62,7 @@ class Shape final {
 
   void contract(int dim) {
     int sz = this->rank();
+    if (dim >= sz) return;
     if (dim < -sz) return;
     if (dim < 0) dim += sz;
     s_type d = value_[dim];
@@ -74,7 +75,6 @@ class Shape final {
   }
 
   bool is_compatible(const Shape& rhs) const {
-    // None is compatible with every tensor
     if (rhs.is_none() || this->is_none()) return true;
     auto us_it = this->value_.end(), them_it = rhs.value_.end();
     const auto b_us = this->value_.begin(), b_them = rhs.value_.begin();

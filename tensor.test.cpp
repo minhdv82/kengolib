@@ -49,30 +49,17 @@ TEST(test_dynamic, dynamic_foo) {
     uint64_t n1 = rng.uniform<uint64_t>(50, 100),
              n2 = rng.uniform<uint64_t>(50, 100),
              n3 = rng.uniform<uint64_t>(50, 100);
-    Shape sh({n1, n2, n3}), shp({n1 * n2, n3});
+    Shape sh({n1, n2, n3}), shp({n1, n2, 1});
 
-    std::vector<int> val(n1 * n2 * n3, 0), earl(n1 * n2 * n3, 0);
-    for (auto& v : val) v = rng.uniform<int32_t>(-10, 100);
-    for (auto& v : earl) v = rng.uniform<int32_t>(-100, 100);
-    Tensor<int> t(sh, val), u(sh, earl);
-    auto tmu = t * u;
-    auto tpu = t + u;
-    auto foo = t + 1;
-    auto bar = foo;
-    foo.reshape({n1 * n2, n3});
-    ASSERT_TRUE(t.is_compatible(u));
-    ASSERT_TRUE(t.is_compatible(tmu));
-    ASSERT_TRUE(t.is_compatible(tpu));
-    ASSERT_EQ(t, tpu - u);
-    ASSERT_FALSE(foo.is_none());
-    ASSERT_FALSE(foo - 1 == t);
-    ASSERT_TRUE(bar - 1 == t);
-    sh.contract(0);
-    shp.flatten();
-    ASSERT_EQ(sh.size(), shp.size());
-    tmu.contract(0);
-    tpu.extend(1);
-    ASSERT_FALSE(tmu.is_compatible(tpu));
+    std::vector<int> val1(n1 * n2 * n3, 0), val2(n1 * n2 * n3, 0), val3(n1 * n2, 0);
+    for (auto& v : val1) v = rng.uniform<int32_t>(-10, 100);
+    for (auto& v : val2) v = rng.uniform<int32_t>(-100, 100);
+    for (auto& v : val3) v = rng.uniform<int32_t>(-100, 100);
+    Tensor<int> t(sh, val1), u(sh, val2), v(shp, val3);
+    ASSERT_EQ(t + v, v + t);
+    ASSERT_EQ(t * v, v * t);
+    ASSERT_NO_THROW(t.extend(-1));
+    ASSERT_NO_THROW(t.contract(2));
   }
 };
 

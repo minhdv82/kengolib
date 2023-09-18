@@ -44,14 +44,17 @@ TEST(test_dynamic, test_math) {
 TEST(test_many_digits, test_mul_add) {
   std::vector<uint64_t> u, v;
   for (int i = 0; i < 5000; ++i) {
-    u.push_back(rng.int64());
+    u.push_back(rng.uint64());
     v.push_back(rng.uint64());
   }
   // x and y are 5k x 64-bit numbers
   bigint x(u), y(v);
   bigint s = x / y, r = x % y;
+  ASSERT_EQ(x.size(), 5000);
+  ASSERT_EQ(y.size(), 5000);
   ASSERT_EQ(x + y, y + x);
   ASSERT_EQ(x, s * y + r);
+  ASSERT_EQ(x + x, x * 2);
 }
 
 

@@ -11,13 +11,9 @@
 
 #include <time.h>
 
-#include <cassert>
-#include <iostream>
-#include <vector>
-
+Rand rng(82 + time(nullptr));
 
 TEST(test_dynamic, test_math) {
-  Rand rng(82 + time(nullptr));
   for (int i = 0; i < 10; ++i) {
     // x and y are huge numbers
     bigint x({rng.uint64(), rng.uint64(), rng.uint64(), rng.uint64(),
@@ -44,6 +40,20 @@ TEST(test_dynamic, test_math) {
     ASSERT_FALSE(x * y == x * (y + 1));
   }
 };
+
+TEST(test_many_digits, test_mul_add) {
+  std::vector<uint64_t> u, v;
+  for (int i = 0; i < 5000; ++i) {
+    u.push_back(rng.int64());
+    v.push_back(rng.uint64());
+  }
+  // x and y are 5k x 64-bit numbers
+  bigint x(u), y(v);
+  bigint s = x / y, r = x % y;
+  ASSERT_EQ(x + y, y + x);
+  ASSERT_EQ(x, s * y + r);
+}
+
 
 TEST(test_static_comp, test_prime) {
   bigint e(12345), n(54321), p(56789);

@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "utils.h"
+
 #include <stdint.h>
 
 #include <functional>
@@ -13,6 +15,8 @@
 #include <vector>
 
 namespace kl {
+// we prefer composition over inheritance
+// so Shape is better be a component of Tensor
 class Shape final {
  public:
   typedef uint64_t s_type;
@@ -62,8 +66,7 @@ class Shape final {
 
   void contract(int dim) {
     int sz = this->rank();
-    if (dim >= sz) return;
-    if (dim < -sz) return;
+    if (dim >= sz || dim < -sz) return;
     if (dim < 0) dim += sz;
     s_type d = value_[dim];
     auto it = value_.erase(value_.begin() + dim);
@@ -178,7 +181,7 @@ class Tensor {
 
     const Shape shp = this->shape_ + rhs.shape_;
     std::vector<val_type> value(shp.size(), 0);
-    return this->op_vshape(
+    return this->op_diff_shape(
         rhs, shp, [](val_type l, val_type r) -> val_type { return l + r; });
   }
 
@@ -198,7 +201,7 @@ class Tensor {
     }
 
     Shape shp = this->shape_ + rhs.shape_;
-    return this->op_vshape(
+    return this->op_diff_shape(
         rhs, shp, [](val_type l, val_type r) -> val_type { return l * r; });
   }
 
@@ -215,7 +218,7 @@ class Tensor {
   }
 
  private:
-  Tensor op_vshape(const Tensor& rhs, const Shape& out_shape,
+  Tensor op_diff_shape(const Tensor& rhs, const Shape& out_shape,
                    std::function<val_type(val_type, val_type)> bin_op) const {
     auto expand = [&out_shape](Shape& shp) {
       while (shp.rank() < out_shape.rank()) {

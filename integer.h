@@ -134,4 +134,9 @@ struct bigint {
   bool operator >= (const bigint& rhs) const { return ((*this) == rhs || (*this) > rhs); }
   bool operator < (const bigint& rhs) const {return !((*this) >= rhs); }
   bool operator <= (const bigint& rhs) const { return !((*this) > rhs); }
+  friend std::ostream& operator<<(std::ostream& oss, const bigint& rhs) {
+    oss << rhs.val_.front();
+    for (size_t i = 1; i < rhs.val_.size(); ++i) oss << "-" << rhs.val_[i];
+    return oss;
+  }
 };

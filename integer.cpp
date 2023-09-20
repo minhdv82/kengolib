@@ -27,10 +27,6 @@ inline void sub__(uint64_t& x, uint64_t& y) {
   }
 }
 
-/*
-This subroutine multiplies two unsigned 64 bit
-then stores the result and carry
-*/
 inline void mul__(uint64_t& x, uint64_t& y) {
   uint128_t val = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
   x = val;
@@ -40,10 +36,10 @@ inline void mul__(uint64_t& x, uint64_t& y) {
 void bigint::display() const {
   std::cout << val_.front();
   for (size_t i = 1; i < val_.size(); ++i) std::cout << "-" << val_[i];
-  std::cout << std::endl;
+  std::cout << "\n";
 }
 
-bool bigint::operator == (const bigint& rhs) const {
+bool bigint::operator==(const bigint& rhs) const {
   if (this->size() != rhs.size()) return false;
   for (size_t i = 0; i < this->size(); ++i) {
     if (val_[i] != rhs.val_[i]) return false;
@@ -51,7 +47,7 @@ bool bigint::operator == (const bigint& rhs) const {
   return true;
 };
 
-bigint bigint::operator+ (const bigint& rhs) const {
+bigint bigint::operator+(const bigint& rhs) const {
   std::vector<uint64_t> v, u;
   if (this->size() > rhs.size()) {
     v = this->val_;
@@ -70,7 +66,7 @@ bigint bigint::operator+ (const bigint& rhs) const {
   }
 
   while (c > 0) {
-    if (i >= vsz) {
+    if (i == vsz) {
       v.push_back(c);
       break;
     }
@@ -79,7 +75,7 @@ bigint bigint::operator+ (const bigint& rhs) const {
   return bigint(v);
 }
 
-bigint bigint::operator - (const bigint& rhs) const {
+bigint bigint::operator-(const bigint& rhs) const {
   if (*this <= rhs) return 0;
   std::vector<uint64_t> v = val_, u = rhs.val_;
   size_t usz = u.size(), vsz = v.size();
@@ -90,7 +86,6 @@ bigint bigint::operator - (const bigint& rhs) const {
     sub__(v[i], c);
     c += u[i];
   }
-
   while (c > 0) {
     if (i >= vsz) {
       v.push_back(c);
@@ -98,16 +93,22 @@ bigint bigint::operator - (const bigint& rhs) const {
     }
     sub__(v[i++], c);
   }
+
   return bigint(v);
 }
 
-bigint bigint::operator >> (int n) const {
+bigint bigint::operator>>(int n) const {
   if (n < 1 || *this == 0) return *this;
   std::vector<uint64_t> v = val_;
-  if (n == 64) {
-    if (v.size() < 2) return 0;
+  while (n >= 64) {
+    n -= 64;
     v.pop_back();
-    return bigint(v);
+    if (v.size() < 1) {
+      return 0;
+    }
+    if (n == 0) {
+      return bigint(v);
+    }
   }
   uint64_t c = 0;
   for (int i = this->size() - 1; i >= 0; --i) {
@@ -119,12 +120,15 @@ bigint bigint::operator >> (int n) const {
   return bigint(v);
 }
 
-bigint bigint::operator << (int n) const {
+bigint bigint::operator<<(int n) const {
   if (n == 0 || *this == 0) return *this;
   std::vector<uint64_t> v = val_;
-  if (n == 64) {
+  while (n >= 64) {
+    n -= 64;
     v.insert(v.begin(), 0);
-    return bigint(v);
+    if (n == 0) {
+      return bigint(v);
+    }
   }
   uint64_t c = 0;
   for (size_t i = 0; i < v.size(); ++i) {
@@ -137,20 +141,23 @@ bigint bigint::operator << (int n) const {
   return bigint(v);
 }
 
-bool bigint::operator > (const bigint& rhs) const {
-  if (this->size() > rhs.size()){
+bool bigint::operator>(const bigint& rhs) const {
+  if (this->size() > rhs.size()) {
     return true;
-  } else if (this->size() < rhs.size()){
+  } else if (this->size() < rhs.size()) {
     return false;
   }
   for (int i = rhs.size() - 1; i >= 0; --i) {
-    if (val_[i] > rhs.val_[i]) return true;
-    else if (val_[i] < rhs.val_[i]) return false;
+    if (val_[i] > rhs.val_[i])
+      return true;
+    else if (val_[i] < rhs.val_[i])
+      return false;
   }
+
   return false;
 }
 
-bigint bigint::operator* (uint64_t x) const {
+bigint bigint::operator*(uint64_t x) const {
   std::vector<uint64_t> v = this->val_;
   uint64_t c = 0;
   for (size_t i = 0; i < v.size(); ++i) {
@@ -162,25 +169,28 @@ bigint bigint::operator* (uint64_t x) const {
   if (c > 0) {
     v.push_back(c);
   }
+
   return bigint(v);
 }
 
-bigint bigint::operator* (const bigint& rhs) const {
+bigint bigint::operator*(const bigint& rhs) const {
   bigint res = rhs * val_.back();
   for (int i = val_.size() - 2; i >= 0; --i) {
     res = (rhs * val_[i]) + (res << 64);
   }
+
   return res;
 }
 
-bigint bigint::operator / (uint64_t x) const {
-  if (*this < x || x <= 1 ) return 0;
+bigint bigint::operator/(uint64_t x) const {
+  if (*this < x || x <= 1) return 0;
   if (*this == x) return 1;
   size_t sz = val_.size();
   std::vector<uint64_t> v(sz, 0);
   uint64_t c = 0;
   for (int i = sz - 1; i >= 0; --i) {
-    uint128_t val = (static_cast<uint128_t>(c) << 64) + static_cast<uint128_t>(val_[i]);
+    uint128_t val =
+        (static_cast<uint128_t>(c) << 64) + static_cast<uint128_t>(val_[i]);
     c = static_cast<uint64_t>(val % x);
     v[i] = static_cast<uint64_t>(val / x);
   }
@@ -188,12 +198,12 @@ bigint bigint::operator / (uint64_t x) const {
   return bigint(v);
 }
 
-void divmod__(bigint& no, bigint& de) {
+void divmod__(bigint& nu, bigint& de) {
   bigint earl = 0;
-  bigint val = no;
+  bigint val = nu;
   while (val >= de) {
     if (val == de) {
-      no = earl + 1;
+      nu = earl + 1;
       de = 0;
       return;
     }
@@ -222,19 +232,18 @@ void divmod__(bigint& no, bigint& de) {
     val = val - r * de;
     earl = earl + r;
   }
-  no = earl;
+  nu = earl;
   de = val;
 }
 
-bigint bigint::operator / (const bigint& rhs) const {
-  bigint no = bigint(this->val_), de = bigint(rhs.val_);
-  divmod__(no, de);
-  return no;
+bigint bigint::operator/(const bigint& rhs) const {
+  bigint nu = bigint(this->val_), de = bigint(rhs.val_);
+  divmod__(nu, de);
+  return nu;
 }
 
-bigint bigint::operator % (const bigint& rhs) const {
-  bigint no = bigint(this->val_), de = bigint(rhs.val_);
-  divmod__(no, de);
+bigint bigint::operator%(const bigint& rhs) const {
+  bigint nu = bigint(this->val_), de = bigint(rhs.val_);
+  divmod__(nu, de);
   return de;
 }
-  

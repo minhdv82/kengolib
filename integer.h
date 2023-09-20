@@ -13,19 +13,19 @@
 typedef unsigned __int128 uint128_t;
 
 class Zeroable {
-  public:
-    Zeroable(){}
-    virtual ~Zeroable() = 0;
-    virtual bool is_zero() const = 0;
+ public:
+  Zeroable() {}
+  virtual ~Zeroable() = 0;
+  virtual bool is_zero() const = 0;
 };
 
 class Moduloable {
-  public:
-   Moduloable() {};
-   virtual Moduloable& operator% (const Moduloable&) = 0;
+ public:
+  Moduloable(){};
+  virtual Moduloable& operator%(const Moduloable&) = 0;
 };
 
-inline void add__(uint64_t& x, uint64_t & y);
+inline void add__(uint64_t& x, uint64_t& y);
 inline void mul__(uint64_t& x, uint64_t& y);
 
 template <typename T>
@@ -60,13 +60,21 @@ void euclid(T& a, T& b) {
     ss = ss - q * s;
     swap(ss, s);
   }
-  
+
   if (b != 0) {
     b = (rr - ss * a) % b;
   } else {
     b = 0;
   }
   a = ss;
+};
+
+// inverse(a, b) * a = gcd(a, b)
+template <typename T>
+T inverse(const T& a, const T& b) {
+  euclid(a, b);
+
+  return (a < 0) ? a + b : a;
 };
 
 // compute x^n modulo p
@@ -94,7 +102,7 @@ bool is_prime(const T& x) {
 // find the first prime number that is greater than x
 template <typename T>
 T make_prime(const T& x) {
-  T val = (x & 1)? x : x + 1;
+  T val = (x & 1) ? x : x + 1;
   while (!is_prime(val)) {
     val = val + 2;
   }
@@ -113,27 +121,39 @@ struct bigint {
   bigint() : val_{{0}} {}
   bigint(uint64_t x) : val_{{x}} {}
   bigint(const std::vector<uint64_t>& val) : val_{val} { canonize(); }
-  bigint(bigint&& rhs) : val_{std::move(rhs.val_)} {}
+  bigint(bigint&& rhs) : val_{std::move(rhs.val_)} { rhs.val_ = {}; }
   bigint(const bigint& rhs) : val_{rhs.val_} {}
-  bigint operator + (const bigint&) const;
-  bigint operator - (const bigint&) const;
-  bigint operator * (const bigint&) const;
-  bigint operator * (uint64_t) const;
-  bigint operator / (uint64_t) const;
-  bigint operator / (const bigint&) const;
-  bigint operator % (const bigint&) const;
-  bigint operator >> (int) const;
-  bigint operator << (int) const;
-  uint64_t operator & (uint64_t x) const { return this->val_[0] & x; }
-  bigint& operator = (const bigint& rhs) { this->val_ = rhs.val_; return *this; }
-  bool operator == (const bigint&) const;
-  bool operator != (const bigint& rhs) const { return !((*this) == rhs); }
-  bool operator == (uint64_t x) const { return (this->size() == 1 && this->val_[0] == x); }
-  bool operator != (uint64_t x) const { return !((*this) == x); }
-  bool operator > (const bigint&) const;
-  bool operator >= (const bigint& rhs) const { return ((*this) == rhs || (*this) > rhs); }
-  bool operator < (const bigint& rhs) const {return !((*this) >= rhs); }
-  bool operator <= (const bigint& rhs) const { return !((*this) > rhs); }
+  bigint operator+(const bigint&) const;
+  bigint operator-(const bigint&) const;
+  bigint operator*(const bigint&) const;
+  bigint operator*(uint64_t) const;
+  bigint operator/(uint64_t) const;
+  bigint operator/(const bigint&) const;
+  bigint operator%(const bigint&) const;
+  bigint operator>>(int) const;
+  bigint operator<<(int) const;
+  uint64_t operator&(uint64_t x) const { return this->val_[0] & x; }
+  bigint& operator=(const bigint& rhs) {
+    this->val_ = rhs.val_;
+    return *this;
+  }
+  bigint& operator=(bigint&& rhs) {
+    this->val_ = std::move(rhs.val_);
+    rhs.val_ = {};
+    return *this;
+  }
+  bool operator==(const bigint&) const;
+  bool operator!=(const bigint& rhs) const { return !(*this == rhs); }
+  bool operator==(uint64_t x) const {
+    return (this->size() == 1 && this->val_[0] == x);
+  }
+  bool operator!=(uint64_t x) const { return !(*this == x); }
+  bool operator>(const bigint&) const;
+  bool operator>=(const bigint& rhs) const {
+    return (*this == rhs || *this > rhs);
+  }
+  bool operator<(const bigint& rhs) const { return !(*this >= rhs); }
+  bool operator<=(const bigint& rhs) const { return !(*this > rhs); }
   friend std::ostream& operator<<(std::ostream& oss, const bigint& rhs) {
     oss << rhs.val_.front();
     for (size_t i = 1; i < rhs.val_.size(); ++i) oss << "-" << rhs.val_[i];

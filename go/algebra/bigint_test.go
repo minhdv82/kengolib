@@ -30,12 +30,12 @@ func TestAdd(t *testing.T) {
 		t.Fatalf("Bigint add is not commutative!\n")
 	}
 }
-func TestDistributeLaw(t *testing.T) {
+func TestDistributiveLaw(t *testing.T) {
 	u, v := genVec(100), genVec(100)
 	x, y := Bigint{u}, Bigint{v}
 	xpy, xx, xy := x.Add(&y), x.Mul(&x), x.Mul(&y)
 	lhs, rhs := x.Mul(xpy), xx.Add(xy)
 	if !lhs.Compare(rhs) {
-		t.Fatalf("Bigint mul is not distributed with add!\n")
+		t.Fatalf("Bigint mul is not distributive over add!\n")
 	}
 }

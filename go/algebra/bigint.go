@@ -121,8 +121,8 @@ func (lhs Bigint) Add(rhs *Bigint) *Bigint {
 	value := make([]uint64, len(big))
 	_ = copy(value, big)
 	var c uint64 = 0
-	var gap int = len(big) - len(sml)
-	var i int = len(sml) - 1
+	gap := len(big) - len(sml)
+	i := len(sml) - 1
 	for i >= 0 {
 		cc := add(i+gap, value, sml[i])
 		c = add(i+gap, value, c)
@@ -150,8 +150,8 @@ func (lhs Bigint) Sub(rhs *Bigint) *Bigint {
 	value := make([]uint64, len(big))
 	copy(value, big)
 	var c uint64 = 0
-	var gap int = len(big) - len(sml)
-	var i int = len(sml) - 1
+	gap := len(big) - len(sml)
+	i := len(sml) - 1
 	for i >= 0 {
 		cc := sub(i+gap, value, sml[i])
 		c = sub(i, value, c)

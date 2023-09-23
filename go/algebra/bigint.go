@@ -6,7 +6,6 @@ import (
 )
 
 type Bigint struct {
-	// size  int
 	value []uint64
 }
 
@@ -119,13 +118,13 @@ func (lhs Bigint) Add(rhs *Bigint) *Bigint {
 		big = rhs.value
 		sml = lhs.value
 	}
-	var value = make([]uint64, len(big))
+	value := make([]uint64, len(big))
 	_ = copy(value, big)
 	var c uint64 = 0
 	var gap int = len(big) - len(sml)
 	var i int = len(sml) - 1
 	for i >= 0 {
-		var cc = add(i+gap, value, sml[i])
+		cc := add(i+gap, value, sml[i])
 		c = add(i+gap, value, c)
 		c += cc
 		i--
@@ -148,13 +147,13 @@ func (lhs Bigint) Sub(rhs *Bigint) *Bigint {
 	}
 	var big, sml []uint64 = lhs.value, rhs.value
 
-	var value = make([]uint64, len(big))
+	value := make([]uint64, len(big))
 	copy(value, big)
 	var c uint64 = 0
 	var gap int = len(big) - len(sml)
 	var i int = len(sml) - 1
 	for i >= 0 {
-		var cc = sub(i+gap, value, sml[i])
+		cc := sub(i+gap, value, sml[i])
 		c = sub(i, value, c)
 		c += cc
 		i--
@@ -172,7 +171,7 @@ func (x Bigint) MulUint(val uint64) *Bigint {
 	if val == 0 || x.Zero() {
 		return &BI0
 	}
-	var value = make([]uint64, x.size())
+	value := make([]uint64, x.size())
 	copy(value, x.value)
 	var c uint64 = 0
 	for i := len(value) - 1; i >= 0; i-- {
@@ -216,7 +215,7 @@ func (x Bigint) LeftShift(n int) *Bigint {
 	if n < 1 || x.Zero() {
 		return &x
 	}
-	var value = make([]uint64, len(x.value))
+	value := make([]uint64, len(x.value))
 	copy(value, x.value)
 	for n >= 64 {
 		value = pushBack(0, value)
@@ -227,7 +226,7 @@ func (x Bigint) LeftShift(n int) *Bigint {
 	}
 	var c uint64 = 0
 	for i := len(value) - 1; i >= 0; i-- {
-		var val uint64 = (value[i] << n) | c
+		val := (value[i] << n) | c
 		c = (value[i]) >> (64 - n)
 		value[i] = val
 	}
@@ -238,11 +237,11 @@ func (x Bigint) LeftShift(n int) *Bigint {
 }
 
 func (lhs Bigint) Mul(rhs *Bigint) *Bigint {
-	var res = *lhs.MulUint(rhs.value[0])
+	res := lhs.MulUint(rhs.value[0])
 	for i := 1; i < rhs.size(); i++ {
-		res = *res.LeftShift(64)
-		var val = *lhs.MulUint(rhs.value[i])
-		res = *val.Add(&res)
+		res = res.LeftShift(64)
+		val := lhs.MulUint(rhs.value[i])
+		res = val.Add(res)
 	}
-	return &res
+	return res
 }

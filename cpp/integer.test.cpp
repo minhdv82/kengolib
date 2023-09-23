@@ -57,12 +57,11 @@ TEST(test_many_digits, test_mul_add) {
   ASSERT_EQ(x + x, x * 2);
 }
 
-
 TEST(test_static_comp, test_prime) {
   bigint e(12345), n(54321), p(56789);
   bigint enp = pow_mod(e, n, p);
   bigint x(12345678987654321);
-  bigint y = make_prime(x);  // becomes 12345678987654373
+  bigint y = make_prime(x); // becomes 12345678987654373
   ASSERT_EQ(enp, 30482);
   ASSERT_FALSE(is_prime(x));
   ASSERT_EQ(y, 12345678987654373);

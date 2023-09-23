@@ -90,13 +90,35 @@ T pow_mod(const T& x, const T& n, const T& p) {
   return res;
 }
 
+template <typename T>
+bool miller_rabin(const T& x, int num_witness = 5) {
+  const T xmo = x - 1;
+  T q = xmo;
+  int k = 0;
+  while (!(q & 1)) {
+    ++k;
+    q = q >> 1;
+  }
+
+  for (auto w = 2; w < num_witness + 2; ++w) {
+    T n = pow_mod(T(w), q, x);
+    if (n == 1 || n == xmo) return true;
+    for (int i = 0; i < k; ++i) {
+      n = (n * n) % x;
+      if (n == xmo) return true;
+      if (n == 1) return false;
+    }
+  }
+
+  return false;
+}
+
+
 // primality test employing Fermat's little theorem
 // this fails for Carmichael numbers, though ^_^
 template <typename T>
 bool is_prime(const T& x) {
-  if (x == 2) return true;
-  T e(2);
-  return (pow_mod(e, x, x) == e);
+  return miller_rabin(x);
 }
 
 // find the first prime number that is greater than x

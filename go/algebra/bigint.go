@@ -21,16 +21,20 @@ func (x *Bigint) size() int {
 	return len(x.value)
 }
 
-var BI0 Bigint = Bigint{[]uint64{0}}
-var BI1 Bigint = Bigint{[]uint64{1}}
+func BI0() *Bigint {
+	return &Bigint{[]uint64{0}}
+}
+func BI1() *Bigint {
+	return &Bigint{[]uint64{1}}
+}
 
-func add(i int, x []uint64, y uint64) (carry uint64) {
-	x[i], carry = bits.Add64(x[i], y, 0)
+func add(i int, x []uint64, y, c uint64) (carry uint64) {
+	x[i], carry = bits.Add64(x[i], y, c)
 	return
 }
 
-func sub(i int, x []uint64, y uint64) (carry uint64) {
-	x[i], carry = bits.Sub64(x[i], y, 0)
+func sub(i int, x []uint64, y, c uint64) (carry uint64) {
+	x[i], carry = bits.Sub64(x[i], y, c)
 	return
 }
 
@@ -87,7 +91,7 @@ func (lhs Bigint) Order(rhs *Bigint) bool {
 			return false
 		}
 	}
-	return true
+	return false
 }
 
 func (x Bigint) Zero() bool {
@@ -98,15 +102,41 @@ func (x Bigint) Unit() bool {
 	return x.size() == 1 && x.value[0] == 1
 }
 
-func (lhs Bigint) Modulo(rhs *Bigint) Bigint {
+func (lhs Bigint) Modulo(rhs Bigint) Bigint {
 	if rhs.Zero() {
-		return BI0
+		return *BI0()
 	}
-	return Bigint{}
+	_, mod := lhs.DivMod(&rhs)
+	return *mod
+}
+
+func (lhs Bigint) Gcd(rhs Bigint) Bigint {
+	if rhs.Zero() {
+		return lhs
+	}
+	return rhs.Gcd(lhs.Modulo(rhs))
 }
 
 func (x Bigint) And(val uint64) uint64 {
 	return x.value[x.size()-1] & val
+}
+
+func (x Bigint) AddUint(val uint64) *Bigint {
+	var c uint64
+	value := make([]uint64, x.size())
+	_ = copy(value, x.value)
+
+	c = add(len(value)-1, value, val, c)
+	i := len(value) - 2
+	for c > 0 {
+		if i < 0 {
+			value = pushFront(c, value)
+			break
+		}
+		c = add(i, value, 0, c)
+		i--
+	}
+	return &Bigint{value}
 }
 
 func (lhs Bigint) Add(rhs *Bigint) *Bigint {
@@ -124,9 +154,7 @@ func (lhs Bigint) Add(rhs *Bigint) *Bigint {
 	gap := len(big) - len(sml)
 	i := len(sml) - 1
 	for i >= 0 {
-		cc := add(i+gap, value, sml[i])
-		c = add(i+gap, value, c)
-		c += cc
+		c = add(i+gap, value, sml[i], c)
 		i--
 	}
 	i = gap - 1
@@ -135,15 +163,15 @@ func (lhs Bigint) Add(rhs *Bigint) *Bigint {
 			value = pushFront(c, value)
 			break
 		}
-		c = add(i, value, c)
+		c = add(i, value, 0, c)
 		i--
 	}
 	return &Bigint{value}
 }
 
 func (lhs Bigint) Sub(rhs *Bigint) *Bigint {
-	if lhs.Compare(rhs) || !lhs.Order(rhs) {
-		return &Bigint{[]uint64{0}}
+	if !lhs.Order(rhs) {
+		return BI0()
 	}
 	var big, sml []uint64 = lhs.value, rhs.value
 
@@ -153,14 +181,12 @@ func (lhs Bigint) Sub(rhs *Bigint) *Bigint {
 	gap := len(big) - len(sml)
 	i := len(sml) - 1
 	for i >= 0 {
-		cc := sub(i+gap, value, sml[i])
-		c = sub(i, value, c)
-		c += cc
+		c = sub(i+gap, value, sml[i], c)
 		i--
 	}
-	i = len(big) - len(sml) - 1
+	i = gap - 1
 	for c > 0 {
-		c = sub(i, value, c)
+		c = sub(i, value, 0, c)
 		i--
 	}
 	value = canonize(value)
@@ -169,14 +195,14 @@ func (lhs Bigint) Sub(rhs *Bigint) *Bigint {
 
 func (x Bigint) MulUint(val uint64) *Bigint {
 	if val == 0 || x.Zero() {
-		return &BI0
+		return BI0()
 	}
 	value := make([]uint64, x.size())
 	copy(value, x.value)
 	var c uint64 = 0
 	for i := len(value) - 1; i >= 0; i-- {
-		var cc = mul(i, value, val)
-		c = add(i, value, c)
+		cc := mul(i, value, val)
+		c = add(i, value, c, 0)
 		c += cc
 	}
 	if c > 0 {
@@ -194,7 +220,7 @@ func (x Bigint) RightShift(n int) *Bigint {
 	for n >= 64 {
 		value = popBack(value)
 		if len(value) < 1 {
-			return &BI0
+			return BI0()
 		}
 		n -= 64
 		if n == 0 {
@@ -244,4 +270,67 @@ func (lhs Bigint) Mul(rhs *Bigint) *Bigint {
 		res = val.Add(res)
 	}
 	return res
+}
+
+func (lhs Bigint) divHelper(rhs *Bigint) uint64 {
+	if lhs.Compare(rhs) {
+		return 1
+	}
+	if rhs.Order(&lhs) {
+		return 0
+	}
+	var res uint64
+	value := make([]uint64, len(lhs.value))
+	copy(value, lhs.value)
+	rem := &Bigint{value}
+	for !rhs.Order(rem) {
+		if rem.Compare(rhs) {
+			return res + 1
+		}
+
+		var val uint64
+		if rem.size() == rhs.size() {
+			val = rem.value[0] / rhs.value[0]
+		} else {
+			val, _ = bits.Div64(rem.value[0], rem.value[1], rhs.value[0])
+		}
+		for {
+			tmp := rhs.MulUint(val)
+			if !tmp.Order(rem) || val == 1 {
+				rem = rem.Sub(tmp)
+				res += val
+				break
+			} else {
+				val = val >> 1
+			}
+		}
+	}
+	return res
+}
+
+func (lhs Bigint) DivMod(rhs *Bigint) (div, mod *Bigint) {
+	if lhs.Compare(rhs) {
+		div, mod = BI1(), BI0()
+		return
+	}
+	if rhs.Order(&lhs) {
+		div, mod = BI0(), &lhs
+		return
+	}
+	var v []uint64
+	idx := rhs.size() - 1
+	value := make([]uint64, len(lhs.value))
+	rem := &Bigint{value[:idx]}
+	copy(value, lhs.value)
+	for idx < lhs.size() {
+		rem = rem.LeftShift(64)
+		rem = rem.AddUint(value[idx])
+		c := rem.divHelper(rhs)
+		v = pushBack(c, v)
+		rem = rem.Sub(rhs.MulUint(c))
+		idx++
+	}
+	v = canonize(v)
+	div, mod = &Bigint{v}, rem
+	return
 }

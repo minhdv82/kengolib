@@ -113,9 +113,6 @@ bool miller_rabin(const T& x, int num_witness = 5) {
   return false;
 }
 
-
-// primality test employing Fermat's little theorem
-// this fails for Carmichael numbers, though ^_^
 template <typename T>
 bool is_prime(const T& x) {
   return miller_rabin(x);

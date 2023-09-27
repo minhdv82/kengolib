@@ -122,28 +122,20 @@ func serverStreamer() (chan *Server, func()) {
 
 func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 	fmt.Printf("server %d served client %d\n", server.id, client.id)
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 10)
 	los := (server.id+client.id)%2 == 0
 	if los {
-		for {
-			select {
-			case <-done:
-				fmt.Printf("Server %d is kicked\n", server.id)
-				return
-			case m.left_server <- server:
-				return
-			}
+		select {
+		case <-done:
+			fmt.Printf("Server %d is kicked\n", server.id)
+		case m.left_server <- server:
 		}
 	} else {
 		fmt.Printf("Server %d is staying\n", server.id)
-		for {
-			select {
-			case <-done:
-				fmt.Printf("Server %d is kicked\n", server.id)
-				return
-			case m.stay_server <- server:
-				return
-			}
+		select {
+		case <-done:
+			fmt.Printf("Server %d is kicked\n", server.id)
+		case m.stay_server <- server:
 		}
 	}
 }

@@ -310,12 +310,10 @@ func (lhs Bigint) divHelper(rhs *Bigint) uint64 {
 
 func (lhs Bigint) DivMod(rhs *Bigint) (div, mod *Bigint) {
 	if lhs.Compare(rhs) {
-		div, mod = BI1(), BI0()
-		return
+		return BI1(), BI0()
 	}
 	if rhs.Order(&lhs) {
-		div, mod = BI0(), &lhs
-		return
+		return BI0(), &lhs
 	}
 	var v []uint64
 	idx := rhs.size() - 1
@@ -331,6 +329,5 @@ func (lhs Bigint) DivMod(rhs *Bigint) (div, mod *Bigint) {
 		idx++
 	}
 	v = canonize(v)
-	div, mod = &Bigint{v}, rem
-	return
+	return &Bigint{v}, rem
 }

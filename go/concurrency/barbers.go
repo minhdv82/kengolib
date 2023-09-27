@@ -27,9 +27,9 @@ import (
 )
 
 const (
-	MAX_SERVERS  = 8
-	MAX_CLIENTS  = 32
-	MAX_SERVICES = 10240
+	MAX_SERVERS  = 4
+	MAX_CLIENTS  = 64
+	MAX_SERVICES = 512
 )
 
 type Client struct {
@@ -124,6 +124,7 @@ func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 	fmt.Printf("server %d served client %d\n", server.id, client.id)
 	time.Sleep(time.Millisecond * 100)
 	los := (server.id+client.id)%2 == 0
+	los = false
 	if los {
 		for {
 			select {
@@ -131,6 +132,7 @@ func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 				fmt.Printf("Server %d is kicked\n", server.id)
 				return
 			case m.left_server <- server:
+				return
 			}
 		}
 	} else {
@@ -141,6 +143,7 @@ func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 				fmt.Printf("Server %d is kicked\n", server.id)
 				return
 			case m.stay_server <- server:
+				return
 			}
 		}
 	}
@@ -171,6 +174,19 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 		case <-done:
 			fmt.Println("Middleman done service!")
 			return
+		case server := <-m.left_server:
+			m.num_servers--
+			fmt.Printf("Server %d is leaving\n", server.id)
+		case server := <-m.stay_server:
+			if waiting_client.len() > 0 {
+				client, _ := waiting_client.Pop()
+				fmt.Printf("Server %d picks client %d\n", server.id, client.id)
+				go m.pair(server, client, done)
+				mupdate()
+			} else {
+				fmt.Printf("Server %d is idle\n", server.id)
+				idle_servers.Push(server)
+			}
 		case client := <-cchan:
 			if idle_servers.IsEmpty() {
 				if waiting_client.len() < m.max_clients {
@@ -198,19 +214,7 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 			} else {
 				fmt.Printf("Server %d is denied\n", server.id)
 			}
-		case server := <-m.left_server:
-			m.num_servers--
-			fmt.Printf("Server %d is leaving\n", server.id)
-		case server := <-m.stay_server:
-			if waiting_client.len() > 0 {
-				client, _ := waiting_client.Pop()
-				fmt.Printf("Server %d picks client %d\n", server.id, client.id)
-				go m.pair(server, client, done)
-				mupdate()
-			} else {
-				fmt.Printf("Server %d is idle\n", server.id)
-				idle_servers.Push(server)
-			}
+
 		default:
 			if !idle_servers.IsEmpty() && !waiting_client.IsEmpty() {
 				server, _ := idle_servers.Pop()

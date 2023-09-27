@@ -28,8 +28,8 @@ import (
 
 const (
 	MAX_SERVERS  = 4
-	MAX_CLIENTS  = 64
-	MAX_SERVICES = 512
+	MAX_CLIENTS  = 8
+	MAX_SERVICES = 128
 )
 
 type Client struct {
@@ -92,7 +92,7 @@ func clientStreamer() (chan *Client, func()) {
 				fmt.Println("Client streamer says fare the well")
 				return
 			case cchan <- &Client{id: rng.Int()}:
-				time.Sleep(time.Microsecond)
+				time.Sleep(time.Millisecond)
 			}
 		}
 	}()
@@ -113,7 +113,7 @@ func serverStreamer() (chan *Server, func()) {
 				fmt.Println("Server streamer says fare the well")
 				return
 			case schan <- &Server{id: rng.Int()}:
-				time.Sleep(time.Millisecond * 10)
+				time.Sleep(time.Millisecond)
 			}
 		}
 	}()
@@ -124,7 +124,6 @@ func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 	fmt.Printf("server %d served client %d\n", server.id, client.id)
 	time.Sleep(time.Millisecond * 100)
 	los := (server.id+client.id)%2 == 0
-	los = false
 	if los {
 		for {
 			select {
@@ -160,6 +159,17 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 	schan, scancel := serverStreamer()
 	done := make(chan struct{})
 
+	cleanup := func() {
+		for idle_servers.len() > 0 {
+			server, _ := idle_servers.Pop()
+			fmt.Printf("Kicks server %d\n", server.id)
+		}
+		for waiting_client.len() > 0 {
+			client, _ := waiting_client.Pop()
+			fmt.Printf("Kicks client %d\n", client.id)
+		}
+	}
+
 	mupdate := func() {
 		cnt++
 		if cnt >= MAX_SERVICES {
@@ -173,6 +183,7 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 		select {
 		case <-done:
 			fmt.Println("Middleman done service!")
+			cleanup()
 			return
 		case server := <-m.left_server:
 			m.num_servers--
@@ -190,6 +201,7 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 		case client := <-cchan:
 			if idle_servers.IsEmpty() {
 				if waiting_client.len() < m.max_clients {
+					fmt.Printf("Client %d is waiting\n", client.id)
 					waiting_client.Push(client)
 				} else {
 					fmt.Printf("Client %d is denied\n", client.id)
@@ -209,6 +221,7 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 					go m.pair(server, client, done)
 					mupdate()
 				} else {
+					fmt.Printf("Server %d is idle\n", server.id)
 					idle_servers.Push(server)
 				}
 			} else {
@@ -217,12 +230,13 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 
 		default:
 			if !idle_servers.IsEmpty() && !waiting_client.IsEmpty() {
+				fmt.Println("This should not be happening!")
 				server, _ := idle_servers.Pop()
 				client, _ := waiting_client.Pop()
 				go m.pair(server, client, done)
 				mupdate()
 			}
-			time.Sleep(time.Microsecond * 100)
+			time.Sleep(time.Millisecond)
 		}
 	}
 }

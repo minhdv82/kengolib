@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) [2023] Minh v. Duong; dvminh82@gmail.com
+ *
+ * You are free to use, modify, re-distribute this code at your own risk.
+ */
+
+/*
+This is an implementation for the extended barber shop, which is described as follows:
+i. A barber shop (aka Middleman) has MAX_SERVERS number of hair-cut chairs, for barbers (Servers), and MAX_CLIENTS number of waiting chairs for clients.
+ii. Barbers and clients come and go
+iii. When a client comes, he checks if there is free waiting-chair;
+	if yes, he sits on the chair and waits for service, otherwise he leaves (denied of service)
+iv. When a barber comes, he does the same protocol with hair-cut chairs as a client does with waiting chairs
+v. When a barber is done servicing a client, he draws a coin to determine whether to stay or leave.
+	In case he stays, he checks if there's a waiting client for next services; if not, he sleeps.
+vi. When new client comes and there's sleeping barbers, the shop (middleman) wakes the longest sleeping barber up, on behalf of the client.
+vii. The shop may have a max number of services, MAX_SERVICES, that once reached, it will dismiss all barbers and clients and then closes.
+*/
+
 package main
 
 import (
@@ -8,9 +27,9 @@ import (
 )
 
 const (
-	MAX_SERVERS  = 2
-	MAX_CLIENTS  = 20
-	MAX_SERVICES = 50
+	MAX_SERVERS  = 8
+	MAX_CLIENTS  = 32
+	MAX_SERVICES = 10240
 )
 
 type Client struct {
@@ -40,7 +59,7 @@ func NewQueue[T any]() Queue[T] {
 func (q *Queue[T]) Pop() (T, error) {
 	if len(q.data) == 0 {
 		var noop T
-		return noop, fmt.Errorf("Empty pop")
+		return noop, fmt.Errorf("empty pop")
 	}
 	val := q.data[0]
 	q.data = q.data[1:]
@@ -94,7 +113,7 @@ func serverStreamer() (chan *Server, func()) {
 				fmt.Println("Server streamer says fare the well")
 				return
 			case schan <- &Server{id: rng.Int()}:
-				time.Sleep(time.Microsecond * 10)
+				time.Sleep(time.Millisecond * 10)
 			}
 		}
 	}()
@@ -105,12 +124,11 @@ func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 	fmt.Printf("server %d served client %d\n", server.id, client.id)
 	time.Sleep(time.Millisecond * 100)
 	los := (server.id+client.id)%2 == 0
-	los = false
 	if los {
 		for {
 			select {
 			case <-done:
-				fmt.Printf("Server %d says bye bye\n", server.id)
+				fmt.Printf("Server %d is kicked\n", server.id)
 				return
 			case m.left_server <- server:
 			}
@@ -120,7 +138,7 @@ func (m *Middleman) pair(server *Server, client *Client, done chan struct{}) {
 		for {
 			select {
 			case <-done:
-				fmt.Printf("Server %d says bye bye\n", server.id)
+				fmt.Printf("Server %d is kicked\n", server.id)
 				return
 			case m.stay_server <- server:
 			}

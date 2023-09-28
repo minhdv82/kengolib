@@ -86,6 +86,7 @@ func clientStreamer() (chan *Client, func()) {
 		close(done)
 	}
 	go func() {
+		defer close(cchan)
 		for {
 			select {
 			case <-done:
@@ -107,6 +108,7 @@ func serverStreamer() (chan *Server, func()) {
 		close(done)
 	}
 	go func() {
+		defer close(schan)
 		for {
 			select {
 			case <-done:
@@ -147,6 +149,8 @@ func (m *Middleman) serve(wg *sync.WaitGroup) {
 	waiting_client := Queue[*Client]{}
 	m.stay_server = make(chan *Server)
 	m.left_server = make(chan *Server)
+	defer close(m.stay_server)
+	defer close(m.left_server)
 	cchan, ccancel := clientStreamer()
 	schan, scancel := serverStreamer()
 	done := make(chan struct{})
